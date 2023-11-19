@@ -1,6 +1,5 @@
 'use client';
 import { login } from '@/api';
-import { setToken } from '@/helper/auth';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { SetStateAction, useState } from 'react';

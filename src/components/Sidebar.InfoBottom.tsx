@@ -1,18 +1,25 @@
-import { Image } from 'react-bootstrap';
+import Link from 'next/link';
+import { Container, Image } from 'react-bootstrap';
 
 const InfoBottom = () => {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: 10, borderColor: 'black' }}>
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <div style={{ borderRadius: '50%' }}>
-          <Image alt='avatar' src='https://cdn-icons-png.flaticon.com/512/103/103945.png' width='50' height='50' />
+    <>
+      <Link href={'login'} className='btn btn-danger'>
+        Logout
+      </Link>
+
+      <Container className='d-flex justify-content-between px-4'>
+        <div className='d-flex justify-content-center align-items-center'>
+          <div className='border rounded-circle'>
+            <Image alt='avatar' src='https://cdn-icons-png.flaticon.com/512/103/103945.png' width='50' height='50' />
+          </div>
         </div>
-      </div>
-      <div className='px-2' style={{ flex: 1 }}>
-        <div>Lê Trung Phát</div>
-        <div>phat.ltrung@mail.com</div>
-      </div>
-    </div>
+        <div className='px-2 w-100 text-center'>
+          <div className='text-wrap'>Lê Trung Phát</div>
+          <div className='d-none d-lg-block'>phat.ltrung@mail.com</div>
+        </div>
+      </Container>
+    </>
   );
 };
 
