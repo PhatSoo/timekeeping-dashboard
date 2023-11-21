@@ -96,10 +96,12 @@ const Employee = () => {
     setShowModal(false);
   };
 
-  const handleChangeFormData = (event: { target: { name: any; value: any } }) => {
+  const handleChangeFormData = (event: React.ChangeEvent<any>) => {
+    const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
+
     setFormData({
       ...formData,
-      [event.target.name]: event.target.value,
+      [event.target.name]: value,
     });
   };
 

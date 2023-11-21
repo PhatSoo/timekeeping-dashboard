@@ -9,10 +9,12 @@ interface IProp {
   showModal: boolean;
   handleCloseModal: () => void;
   formData: IEmployee;
-  handleChangeFormData: (event: { target: { name: any; value: any } }) => void;
+  handleChangeFormData: (event: React.ChangeEvent<any>) => void;
 }
 
 const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChangeFormData }: IProp) => {
+  const [checkFormData, setCheckFormData] = useState(false);
+
   const isAddNew = formData._id === '';
 
   const handleSubmit = (event: { preventDefault: () => void }) => {
@@ -56,7 +58,7 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
 
               <Form.Group className='mb-3'>
                 <Form.Label>CCCD</Form.Label>
-                <Form.Control name='CCCD' type='text' pattern='\d{12}' required value={formData.CCCD} onChange={handleChangeFormData} placeholder='Nhập số căn cước công dân...' />
+                <Form.Control name='CCCD' type='number' pattern='\d{12}' required value={formData.CCCD} onChange={handleChangeFormData} placeholder='Nhập số căn cước công dân...' />
               </Form.Group>
 
               <Form.Group className='mb-3'>

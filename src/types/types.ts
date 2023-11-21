@@ -17,3 +17,14 @@ export interface IShift {
   startTime: string;
   endTime: string;
 }
+
+export interface IFulltime {}
+
+export interface ISchedule {}
+
+export interface IPartTime {
+  _id: string;
+  checkInTime: Date;
+  checkOutTime: Date;
+  status: ['NULL', 'WORKING', 'DONE'];
+}

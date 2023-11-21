@@ -4,7 +4,7 @@ import React from 'react';
 
 const Header = () => {
   const pathname = usePathname();
-  const header = pathname === '/' ? 'HOME' : pathname.slice(1);
+  const header = pathname === '/' ? 'HOME' : pathname.slice(1).replace(/-/g, ' ');
   return (
     <div className='d-flex align-items-center justify-content-start w-100 p-2'>
       <div className='d-flex justify-content-center w-100'>
