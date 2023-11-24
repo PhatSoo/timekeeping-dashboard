@@ -1,12 +1,14 @@
 'use client';
 import { Card } from 'react-bootstrap';
+import Link from 'next/link';
 
 interface IProp {
   Title: string;
   Content: number;
+  Href: string;
 }
 
-const CardItem = ({ Title, Content }: IProp) => {
+const CardItem = ({ Title, Content, Href }: IProp) => {
   return (
     <Card style={{ width: '18rem' }} className='shadow p-3 mb-5 bg-white rounded'>
       <Card.Body>
@@ -14,9 +16,9 @@ const CardItem = ({ Title, Content }: IProp) => {
         <Card.Text>
           Tổng cộng: {Content} {Title}
         </Card.Text>
-        <Card.Link href='#' className='btn btn-primary'>
+        <Link href={Href} className='btn btn-primary'>
           Xem chi tiết
-        </Card.Link>
+        </Link>
       </Card.Body>
     </Card>
   );

@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Accordion, Button, Card, FloatingLabel, Form, useAccordionButton } from 'react-bootstrap';
 
 const Shift = () => {
-  const [data, setData] = useState<IShift[] | null>();
+  const [data, setData] = useState<IShift[]>([]);
   const [selectedItem, setSelectedItem] = useState<IShift>();
   const [isAddNew, setIsAddNew] = useState(false);
   const [editableCardIdx, setEditableCardIdx] = useState(-1);
@@ -16,28 +16,11 @@ const Shift = () => {
     endTime: '',
   });
 
+  // Get all shifts
   useEffect(() => {
-    const dataAPI: IShift[] = [
-      {
-        _id: '6528ea8275292954d4e3f3f5',
-        shiftName: 'Ca sáng',
-        startTime: '08:00',
-        endTime: '12:00',
-      },
-      {
-        _id: '652919d55281b232096b3e9e',
-        shiftName: 'Ca chiều',
-        startTime: '13:00',
-        endTime: '17:00',
-      },
-      {
-        _id: '654891fb7ab62b993ca966e3',
-        shiftName: 'Ca tối',
-        startTime: '17:30',
-        endTime: '21:30',
-      },
-    ];
-    setData(dataAPI);
+    fetch('api/shift')
+      .then((response) => response.json())
+      .then((result) => setData(result.data));
   }, []);
 
   function CustomToggle({ eventKey }: any) {
@@ -185,7 +168,7 @@ const Shift = () => {
 
       {renderAddNew()}
 
-      {data && renderCard()}
+      {data?.length > 0 ? renderCard() : 'Loading...'}
     </>
   );
 };

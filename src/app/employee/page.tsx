@@ -1,15 +1,14 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { HiMiniMagnifyingGlass } from 'react-icons/hi2';
 import { BsThreeDotsVertical } from 'react-icons/bs';
-import { Button, Col, Form, Navbar, Row, Table } from 'react-bootstrap';
+import { Button, Form, Table } from 'react-bootstrap';
 import EmployeeViewDetail from '@/components/Employee.ViewDetail';
 import { IEmployee } from '@/types/types';
 import NavbarComponent from '@/components/App.Navbar';
 
 const Employee = () => {
   const [showModal, setShowModal] = useState(false);
-  const [data, setData] = useState<IEmployee[] | null>();
+  const [data, setData] = useState<IEmployee[]>([]);
   const [selectMultiple, setSelectMultiple] = useState(false);
   const [selectAll, setSelectAll] = useState(false);
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
@@ -21,6 +20,7 @@ const Employee = () => {
     CCCD: '',
     sex: false,
     roleId: {
+      _id: '',
       typeName: '',
     },
     avatar: '',
@@ -28,46 +28,9 @@ const Employee = () => {
 
   // Get data all employees
   useEffect(() => {
-    const dataAPI: IEmployee[] = [
-      {
-        _id: '65290386b4c7c4b0a0ec7eb2',
-        name: 'Nguyen Van A',
-        email: 'nguyenvana@example.com',
-        isPartTime: false,
-        CCCD: '123456789013',
-        sex: false,
-        roleId: {
-          typeName: 'Nhân viên',
-        },
-        avatar: 'AT-65290386b4c7c4b0a0ec7eb2-1699370337676-713823613.jpg',
-      },
-      {
-        _id: '35210386b4c7c4b0a0ec7eb3',
-        name: 'Tran Thi B',
-        email: 'tranthib@example.com',
-        isPartTime: true,
-        CCCD: '987654321013',
-        sex: true,
-        roleId: {
-          typeName: 'Nhân viên part-time',
-        },
-        avatar: 'AT-35210386b4c7c4b0a0ec7eb3-1699370337676-713823613.jpg',
-      },
-      {
-        _id: '45230386b4c7c4b0a0ec7eb4',
-        name: 'Hoang Van C',
-        email: 'hoangvanc@example.com',
-        isPartTime: false,
-        CCCD: '456789012013',
-        sex: false,
-        roleId: {
-          typeName: 'Nhân viên',
-        },
-        avatar: 'AT-45230386b4c7c4b0a0ec7eb4-1699370337676-713823613.jpg',
-      },
-    ];
-
-    setData(dataAPI);
+    fetch('api/employee')
+      .then((response) => response.json())
+      .then((result) => setData(result.data));
   }, []);
 
   const handleShowModal = (idx?: number) => {
@@ -83,6 +46,7 @@ const Employee = () => {
         CCCD: '',
         sex: false,
         roleId: {
+          _id: '',
           typeName: '',
         },
         avatar: '',
@@ -182,23 +146,24 @@ const Employee = () => {
           </tr>
         </thead>
         <tbody>
-          {data &&
-            data.map((item, idx) => (
-              <tr key={idx}>
-                {selectMultiple && (
-                  <td>
-                    <Form.Check checked={selectedRows.includes(idx)} id={`check-item-${idx}`} type='checkbox' onChange={() => handleSelectRow(idx)} />
+          {data?.length > 0
+            ? data.map((item, idx) => (
+                <tr key={idx}>
+                  {selectMultiple && (
+                    <td>
+                      <Form.Check checked={selectedRows.includes(idx)} id={`check-item-${idx}`} type='checkbox' onChange={() => handleSelectRow(idx)} />
+                    </td>
+                  )}
+                  <td>{idx + 1}</td>
+                  <td>{item.name}</td>
+                  <td>{item.email}</td>
+                  <td>{item.roleId.typeName}</td>
+                  <td className='text-end'>
+                    <BsThreeDotsVertical onClick={() => handleShowModal(idx)} />
                   </td>
-                )}
-                <td>{idx + 1}</td>
-                <td>{item.name}</td>
-                <td>{item.email}</td>
-                <td>{item.roleId.typeName}</td>
-                <td className='text-end'>
-                  <BsThreeDotsVertical onClick={() => handleShowModal(idx)} />
-                </td>
-              </tr>
-            ))}
+                </tr>
+              ))
+            : 'Loading...'}
         </tbody>
       </Table>
 

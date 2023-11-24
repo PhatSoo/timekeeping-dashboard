@@ -1,5 +1,6 @@
 'use client';
-import { SetStateAction, useState } from 'react';
+import { IFormRequest } from '@/types/types';
+import { SetStateAction, useEffect, useState } from 'react';
 import { Col, Container, Form, Row, Table } from 'react-bootstrap';
 
 const FormRequest = () => {
@@ -7,6 +8,25 @@ const FormRequest = () => {
   const [filterDateTo, setFilterDateTo] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterName, setFilterName] = useState('');
+  const [data, setData] = useState<IFormRequest[]>([]);
+
+  // Get all form-request
+  useEffect(() => {
+    fetch('api/form-request')
+      .then((response) => response.json())
+      .then((result) => setData(result.data));
+  }, []);
+
+  const countDate = (time1: Date, time2: Date) => {
+    const date1 = new Date(time1);
+    const date2 = new Date(time2);
+
+    const timestamp1 = date1.getTime();
+    const timestamp2 = date2.getTime();
+
+    const oneDay = 24 * 60 * 60 * 1000; // Số mili giây trong một ngày
+    return Math.abs((timestamp2 - timestamp1) / oneDay);
+  };
 
   const handleFilterDateFromChange = (e: { target: { value: SetStateAction<string> } }) => {
     setFilterDateFrom(e.target.value);
@@ -66,15 +86,19 @@ const FormRequest = () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>1</td>
-            <td>1</td>
-            <td>1</td>
-            <td>1</td>
-            <td>1</td>
-            <td>1</td>
-            <td></td>
-          </tr>
+          {data.length > 0
+            ? data.map((form, idx) => (
+                <tr key={idx}>
+                  <td>{idx + 1}</td>
+                  <td>{new Date(form.startDate).toLocaleDateString()}</td>
+                  <td>{new Date(form.endDate).toLocaleDateString()}</td>
+                  <td>{countDate(form.startDate, form.endDate)}</td>
+                  <td>{form.status}</td>
+                  <td>{form.reason}</td>
+                </tr>
+              ))
+            : 'Loading...'}
+          <td></td>
         </tbody>
       </Table>
     );

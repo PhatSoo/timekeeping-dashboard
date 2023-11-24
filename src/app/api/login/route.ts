@@ -1,5 +1,5 @@
 import { setToken } from '@/helper/auth';
-import apiManager from './config';
+import apiManager from '../config';
 
 export const login = async (data: { email: string; password: string }) => {
   try {

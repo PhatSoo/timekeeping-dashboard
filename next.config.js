@@ -1,14 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   env: {
-    API_SERVER: 'http://192.168.1.237:3000',
+    API_SERVER: 'http://localhost:3000',
+    AVATAR_STORE: 'uploads/avatars',
+    ATTENDANCE_STORE: 'uploads/attendances',
     JWT_SECRET: 'JWT_PASS',
   },
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'cdn-icons-png.flaticon.com',
+        protocol: 'http',
+        hostname: 'localhost',
       },
     ],
   },

@@ -1,9 +1,9 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { Button, Col, Form, Modal, Row } from 'react-bootstrap';
-import avatar from '@/../public/avatar.jpg';
+import avatarDefault from '@/../public/avatar.jpg';
+import { IEmployee, IRole } from '@/types/types';
 import Image from 'next/image';
-import { IEmployee } from '@/types/types';
 
 interface IProp {
   showModal: boolean;
@@ -14,8 +14,17 @@ interface IProp {
 
 const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChangeFormData }: IProp) => {
   const [checkFormData, setCheckFormData] = useState(false);
+  const [roleList, setRoleList] = useState<IRole[]>([]);
+  const avatarLink = `${process.env.API_SERVER}/${process.env.AVATAR_STORE}/${formData.avatar}`;
+  const srcValue = formData.avatar ? avatarLink : avatarDefault;
 
   const isAddNew = formData._id === '';
+
+  useEffect(() => {
+    fetch('api/role')
+      .then((response) => response.json())
+      .then((result) => setRoleList(result.data));
+  }, []);
 
   const handleSubmit = (event: { preventDefault: () => void }) => {
     event.preventDefault();
@@ -46,14 +55,7 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
               </Form.Group>
 
               <Form.Group className='mb-3'>
-                <Form.Check // prettier-ignore
-                  name='isPartTime'
-                  type='switch'
-                  id='isPartTime'
-                  label='Nhân viên part-time'
-                  checked={formData.isPartTime}
-                  onChange={handleChangeFormData}
-                />
+                <Form.Check name='isPartTime' type='switch' id='isPartTime' label='Nhân viên part-time' checked={formData.isPartTime} onChange={handleChangeFormData} />
               </Form.Group>
 
               <Form.Group className='mb-3'>
@@ -74,6 +76,12 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
                 <Form.Label>Vai trò</Form.Label>
                 <Form.Select name='roleId' required>
                   <option value=''>Chọn...</option>
+                  {roleList &&
+                    roleList.map((role) => (
+                      <option key={role._id} value={role._id} selected={formData.roleId._id === role._id}>
+                        {role.typeName}
+                      </option>
+                    ))}
                   {/* Thêm các tùy chọn cho các vai trò khác nhau tại đây */}
                 </Form.Select>
               </Form.Group>
@@ -91,7 +99,7 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
               </div>
             )}
             <div>
-              <Image src={formData.avatar ? avatar : avatar} alt='Ảnh' width={300} height={400} />
+              <Image src={srcValue} alt='Ảnh' width={300} height={400} />
             </div>
             <div>
               <Button variant='dark'>Thay đổi ảnh</Button>

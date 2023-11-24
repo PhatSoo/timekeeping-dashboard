@@ -1,5 +1,5 @@
 'use client';
-import { login } from '@/api';
+// import { login } from '@/api';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { SetStateAction, useState } from 'react';
@@ -23,12 +23,12 @@ const Login = () => {
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
 
-    const res = await login({ email, password });
-    if (res.success) {
-      router.push('/');
-    } else {
-      setError(res.message);
-    }
+    // const res = await login({ email, password });
+    // if (res.success) {
+    //   router.push('/');
+    // } else {
+    //   setError(res.message);
+    // }
   };
 
   return (

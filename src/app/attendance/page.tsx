@@ -4,7 +4,7 @@ import { SetStateAction, cloneElement, useEffect, useState } from 'react';
 import { Button, Col, Container, Form, Pagination, Row, Tab, Table, Tabs } from 'react-bootstrap';
 import { FaCalendarAlt } from 'react-icons/fa';
 import { BsFillPlayFill, BsFillStopFill } from 'react-icons/bs';
-import { IFulltime, IPartTime } from '@/types/types';
+import { IEmployee, IFulltime, IPartTime } from '@/types/types';
 
 type dataTest = {
   id: number;
@@ -16,97 +16,69 @@ type dataTest = {
 };
 
 const Attendance = () => {
-  const [filterDate, setFilterDate] = useState('');
+  const today = new Date().toISOString().split('T')[0];
+  const [employeeFull, setEmployeeFull] = useState<IEmployee[]>([]);
+  const [employeePart, setEmployeePart] = useState<IEmployee[]>([]);
+  const [filterDate, setFilterDate] = useState(today);
   const [filterStatus, setFilterStatus] = useState('');
   const [filterName, setFilterName] = useState('');
-  const [fulltimeAttendanceData, setFulltimeAttendanceData] = useState<dataTest[]>([]);
-  const [parttimeData, setParttimeData] = useState([]);
-  const [days, setDays] = useState<Date[]>([]);
+  const [fulltimeAttendanceData, setFulltimeAttendanceData] = useState<IFulltime[]>([]);
+  const [parttimeAttendanceData, setParttimeAttendanceData] = useState<IPartTime[]>([]);
 
-  // Set date for next week
+  // Get all full-time employees
   useEffect(() => {
-    const date = new Date();
-    // date.setDate(date.getDate() + 7 - date.getDay() + (date.getDay() === 0 ? -6 : 1)); // next Monday
-    date.setDate(date.getDate() - date.getDay() + (date.getDay() === 0 ? -6 : 1) - 7); // last Monday
-
-    const newDays = Array(7)
-      .fill(0)
-      .map((_, i) => {
-        const newDate = new Date(date);
-        newDate.setDate(newDate.getDate() + i);
-        return newDate;
-      });
-
-    setDays(newDays);
-    console.log('====================================');
-    console.log('newDays', newDays);
-    console.log('====================================');
+    fetch('api/employee/full-time')
+      .then((response) => response.json())
+      .then((result) => setEmployeeFull(result.data));
   }, []);
-  const dayNames = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
 
-  // Get employees full-time attendance
+  // Get attendance of Full-time employee by Day
   useEffect(() => {
-    const dataAPI = [
-      {
-        id: 1,
-        name: 'John Doe',
-        date: '2023-11-15',
-        clockIn: '08:00',
-        clockOut: '17:00',
-        status: 'Present',
-      },
-      {
-        id: 2,
-        name: 'Alice Smith',
-        date: '2023-11-15',
-        clockIn: '08:30',
-        clockOut: '16:45',
-        status: 'Present',
-      },
-      {
-        id: 3,
-        name: 'Bob Johnson',
-        date: '2023-11-15',
-        clockIn: '09:00',
-        clockOut: '17:30',
-        status: 'Present',
-      },
-      {
-        id: 4,
-        name: 'Emily Davis',
-        date: '2023-11-16',
-        clockIn: '08:15',
-        clockOut: '17:15',
-        status: 'Present',
-      },
-      // Thêm dữ liệu cho các nhân viên khác nếu cần
-    ];
+    fetch(`api/attendance/full?date=${filterDate}`)
+      .then((response) => response.json())
+      .then((result) => setFulltimeAttendanceData(result.data));
+  }, [filterDate]);
 
-    setFulltimeAttendanceData(dataAPI);
-  }, []);
+  const attendanceFullMap = fulltimeAttendanceData.reduce<{ [key: string]: typeof fulltimeAttendanceData }>((map, attendance) => {
+    if (!map[attendance.employeeId]) {
+      map[attendance.employeeId] = [];
+    }
+    map[attendance.employeeId].push(attendance);
+    return map;
+  }, {});
 
   // Get all part-time employees
   useEffect(() => {
-    const parttimeAPI = [
-      { name: 'Nguyễn Văn A', _id: '652919565281b232096b3e8f' },
-      { name: 'Trần Thị B', _id: '652919615281b232096b3e95' },
-      { name: 'Lê Văn C', _id: '' },
-      { name: 'Phạm Thị D', _id: '' },
-      { name: 'Hoàng Văn E', _id: '' },
-    ];
-    setParttimeData(parttimeAPI);
+    fetch('api/employee/part-time')
+      .then((response) => response.json())
+      .then((result) => setEmployeePart(result.data));
   }, []);
 
-  const filteredData = fulltimeAttendanceData.filter((attendance) => {
-    const matchDate = filterDate === '' || attendance.date === filterDate;
-    const matchStatus = filterStatus === '' || attendance.status === filterStatus;
-    const matchName = filterName === '' || attendance.name.toLowerCase().includes(filterName.toLowerCase());
+  // Get attendance of Part-time employee by Day
+  useEffect(() => {
+    fetch(`api/attendance/shift?date=${filterDate}`)
+      .then((response) => response.json())
+      .then((result) => setParttimeAttendanceData(result.data));
+  }, [filterDate]);
 
-    return matchDate && matchStatus && matchName;
-  });
+  const attendanceShiftMap = parttimeAttendanceData.reduce<{ [key: string]: typeof parttimeAttendanceData }>((map, attendance) => {
+    if (!map[attendance.employee]) {
+      map[attendance.employee] = [];
+    }
+    map[attendance.employee].push(attendance);
+    return map;
+  }, {});
+
+  // const filteredData = fulltimeAttendanceData.filter((attendance) => {
+  //   const matchDate = filterDate === '' || attendance.date === filterDate;
+  //   const matchStatus = filterStatus === '' || attendance.status === filterStatus;
+  //   const matchName = filterName === '' || attendance.name.toLowerCase().includes(filterName.toLowerCase());
+
+  //   return matchDate && matchStatus && matchName;
+  // });
 
   const clearFilter = () => {
-    setFilterDate('');
+    setFilterDate(today);
     setFilterStatus('');
     setFilterName('');
   };
@@ -182,18 +154,36 @@ const Attendance = () => {
             </tr>
           </thead>
           <tbody>
-            {fulltimeAttendanceData.map((attendance) => (
-              <tr key={attendance.id}>
-                <td>{attendance.name}</td>
-                <td>{attendance.date}</td>
-                <td>{attendance.clockIn}</td>
-                <td>{attendance.clockOut}</td>
-                <td>{attendance.status}</td>
-                <td>
-                  <Button variant='primary'>Edit</Button>
-                </td>
+            {employeeFull.length > 0 ? (
+              employeeFull.map((employee) => {
+                const attendances = attendanceFullMap[employee._id] || [];
+                if (attendances.length === 0) {
+                  // Nếu nhân viên không có bản ghi điểm danh, hiển thị một hàng với thông tin nhân viên
+                  return (
+                    <tr key={employee._id}>
+                      <td>{employee.name}</td>
+                      <td colSpan={5}>No attendance data</td>
+                    </tr>
+                  );
+                } else {
+                  // Nếu nhân viên có bản ghi điểm danh, hiển thị một hàng cho mỗi bản ghi
+                  return attendances.map((attendance) => (
+                    <tr key={attendance._id}>
+                      <td>{employee.name}</td>
+                      <td>{new Date(attendance.workDate).toLocaleDateString()}</td>
+                      <td>{new Date(attendance.checkInTime).toLocaleTimeString()}</td>
+                      <td>{new Date(attendance.checkOutTime).toLocaleTimeString()}</td>
+                      <td>{attendance.status}</td>
+                      <td>{/* Thêm các hành động của bạn ở đây */}</td>
+                    </tr>
+                  ));
+                }
+              })
+            ) : (
+              <tr>
+                <td colSpan={6}>Loading...</td>
               </tr>
-            ))}
+            )}
           </tbody>
         </Table>
       </Container>
@@ -216,179 +206,34 @@ const Attendance = () => {
             </tr>
           </thead>
           <tbody>
-            {fulltimeAttendanceData.map((attendance) => (
-              <tr key={attendance.id}>
-                <td>{attendance.name}</td>
-                <td>{attendance.date}</td>
-                <td>Ca chiều</td>
-                <td>{attendance.clockIn}</td>
-                <td>{attendance.clockOut}</td>
-                <td>{attendance.status}</td>
-                <td>
-                  <Button variant='primary'>Edit</Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      </Container>
-    );
-  };
-
-  const workData = [
-    {
-      _id: '6549aca0b4f04ebcde365500',
-      employee: {
-        _id: '652919565281b232096b3e8f',
-        name: 'Tran Thi B',
-      },
-      workDate: '2023-11-13T00:00:00.000Z',
-      workShift: [
-        {
-          _id: '6528ea8275292954d4e3f3f5',
-          shiftName: 'Ca sáng',
-        },
-        {
-          _id: '654891fb7ab62b993ca966e3',
-          shiftName: 'Ca tối',
-        },
-      ],
-      __v: 0,
-      createdAt: '2023-11-07T03:18:56.681Z',
-      updatedAt: '2023-11-07T03:18:56.681Z',
-    },
-    {
-      _id: '6549aca0b4f04ebcde365502',
-      employee: {
-        _id: '652919565281b232096b3e8f',
-        name: 'Tran Thi B',
-      },
-      workDate: '2023-11-16T00:00:00.000Z',
-      workShift: [
-        {
-          _id: '652919d55281b232096b3e9e',
-          shiftName: 'Ca chiều',
-        },
-        {
-          _id: '654891fb7ab62b993ca966e3',
-          shiftName: 'Ca tối',
-        },
-      ],
-      __v: 0,
-      createdAt: '2023-11-07T03:18:56.681Z',
-      updatedAt: '2023-11-07T03:18:56.681Z',
-    },
-    {
-      _id: '654c8fb1bbb4b04aeabeffb4',
-      employee: {
-        _id: '652919615281b232096b3e95',
-        name: 'Pham Thi Test',
-      },
-      workDate: '2023-11-16T00:00:00.000Z',
-      workShift: [
-        {
-          _id: '6528ea8275292954d4e3f3f5',
-          shiftName: 'Ca sáng',
-        },
-        {
-          _id: '652919d55281b232096b3e9e',
-          shiftName: 'Ca chiều',
-        },
-        {
-          _id: '654891fb7ab62b993ca966e3',
-          shiftName: 'Ca tối',
-        },
-      ],
-      __v: 0,
-      createdAt: '2023-11-09T07:52:17.364Z',
-      updatedAt: '2023-11-09T07:52:17.364Z',
-    },
-    {
-      _id: '6552eced102b24e4e6e6e2e9',
-      employee: {
-        _id: '652919565281b232096b3e8f',
-        name: 'Tran Thi B',
-      },
-      workDate: '2023-11-14T00:00:00.000Z',
-      workShift: [
-        {
-          _id: '6528ea8275292954d4e3f3f5',
-          shiftName: 'Ca sáng',
-        },
-      ],
-      __v: 0,
-      createdAt: '2023-11-14T03:43:41.618Z',
-      updatedAt: '2023-11-14T03:43:41.618Z',
-    },
-    {
-      _id: '6552eced102b24e4e6e6e2ea',
-      employee: {
-        _id: '652919565281b232096b3e8f',
-        name: 'Tran Thi B',
-      },
-      workDate: '2023-11-16T00:00:00.000Z',
-      workShift: [
-        {
-          _id: '652919d55281b232096b3e9e',
-          shiftName: 'Ca chiều',
-        },
-        {
-          _id: '654891fb7ab62b993ca966e3',
-          shiftName: 'Ca tối',
-        },
-      ],
-      __v: 0,
-      createdAt: '2023-11-14T03:43:41.618Z',
-      updatedAt: '2023-11-14T03:43:41.618Z',
-    },
-  ];
-
-  const shiftColors = {
-    'Ca sáng': 'lightblue',
-    'Ca chiều': 'lightgreen',
-    'Ca tối': 'lightcoral',
-  };
-
-  const renderSchedule = () => {
-    return (
-      <Container fluid>
-        <Table striped bordered hover className='align-middle text-center' style={{ tableLayout: 'fixed' }}>
-          <thead>
-            <tr>
-              <th>#</th>
-              {days.map((day, index) => (
-                <th key={index}>
-                  {dayNames[day.getDay()]}
-                  <br />
-                  {day.getDate()}/{day.getMonth() + 1}
-                </th>
-              ))}
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {parttimeData.map((employee, index) => (
-              <tr key={index}>
-                <td>{employee.name}</td>
-                {days.map((day, index) => {
-                  const workDay = workData.find((data) => data.employee._id === employee._id && new Date(data.workDate).toDateString() === day.toDateString());
+            {employeePart.length > 0 ? (
+              employeePart.map((employee) => {
+                const attendances = attendanceShiftMap[employee._id] || [];
+                if (attendances.length === 0) {
                   return (
-                    <td key={index}>
-                      {workDay
-                        ? workDay.workShift.map((shift, i) => (
-                            <Container key={i} style={{ backgroundColor: shiftColors[shift.shiftName] }} className='rounded my-2'>
-                              {shift.shiftName}
-                            </Container>
-                          ))
-                        : 'N/A'}
-                    </td>
+                    <tr key={employee._id}>
+                      <td>{employee.name}</td>
+                      <td colSpan={6}>No attendance data</td>
+                    </tr>
                   );
-                })}
-                <td>
-                  <Button variant='primary'>Action 1</Button> <Button variant='secondary'>Action 2</Button>
-                </td>
+                } else {
+                  return attendances.map((attendance) => (
+                    <tr key={attendance._id}>
+                      <td>{employee.name}</td>
+                      <td>{new Date(attendance.workDate).toLocaleDateString()}</td>
+                      <td>{attendance.workShift.shiftName}</td>
+                      <td>{new Date(attendance.checkInTime).toLocaleTimeString()}</td>
+                      <td>{new Date(attendance.checkOutTime).toLocaleTimeString()}</td>
+                      <td>{attendance.status}</td>
+                    </tr>
+                  ));
+                }
+              })
+            ) : (
+              <tr>
+                <td>Loading...</td>
               </tr>
-            ))}
+            )}
           </tbody>
         </Table>
       </Container>
@@ -406,11 +251,8 @@ const Attendance = () => {
           <Tab eventKey='home' title='Full-time'>
             {renderFullTime()}
           </Tab>
-          <Tab eventKey='profile' title='Part-time'>
+          <Tab eventKey='profile' title='Part-time' onSelect={() => console.log('>>?')}>
             {renderPartTime()}
-          </Tab>
-          <Tab eventKey='longer-tab' title='Schedule'>
-            {renderSchedule()}
           </Tab>
         </Tabs>
       </div>
