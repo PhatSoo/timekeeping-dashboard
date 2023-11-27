@@ -5,18 +5,13 @@ import { Button, Col, Container, Form, Pagination, Row, Tab, Table, Tabs } from 
 import { FaCalendarAlt } from 'react-icons/fa';
 import { BsFillPlayFill, BsFillStopFill } from 'react-icons/bs';
 import { IEmployee, IFulltime, IPartTime } from '@/types/types';
+import TableLoading from '@/components/Component.TableLoading';
 
-type dataTest = {
-  id: number;
-  name: string;
-  date: string;
-  clockIn: string;
-  clockOut: string;
-  status: string;
-};
+const tableColumns = ['Name', 'Date', 'Check In', 'Check Out', 'Status', 'Action'];
 
 const Attendance = () => {
   const today = new Date().toISOString().split('T')[0];
+  const [isLoading, setIsLoading] = useState(true);
   const [employeeFull, setEmployeeFull] = useState<IEmployee[]>([]);
   const [employeePart, setEmployeePart] = useState<IEmployee[]>([]);
   const [filterDate, setFilterDate] = useState(today);
@@ -30,14 +25,15 @@ const Attendance = () => {
     fetch('api/employee/full-time')
       .then((response) => response.json())
       .then((result) => setEmployeeFull(result.data));
-  }, []);
+  }, [isLoading]);
 
   // Get attendance of Full-time employee by Day
   useEffect(() => {
     fetch(`api/attendance/full?date=${filterDate}`)
       .then((response) => response.json())
-      .then((result) => setFulltimeAttendanceData(result.data));
-  }, [filterDate]);
+      .then((result) => setFulltimeAttendanceData(result.data))
+      .finally(() => setIsLoading(false));
+  }, [filterDate, isLoading]);
 
   const attendanceFullMap = fulltimeAttendanceData.reduce<{ [key: string]: typeof fulltimeAttendanceData }>((map, attendance) => {
     if (!map[attendance.employeeId]) {
@@ -52,14 +48,14 @@ const Attendance = () => {
     fetch('api/employee/part-time')
       .then((response) => response.json())
       .then((result) => setEmployeePart(result.data));
-  }, []);
+  }, [isLoading]);
 
   // Get attendance of Part-time employee by Day
   useEffect(() => {
     fetch(`api/attendance/shift?date=${filterDate}`)
       .then((response) => response.json())
       .then((result) => setParttimeAttendanceData(result.data));
-  }, [filterDate]);
+  }, [filterDate, isLoading]);
 
   const attendanceShiftMap = parttimeAttendanceData.reduce<{ [key: string]: typeof parttimeAttendanceData }>((map, attendance) => {
     if (!map[attendance.employee]) {
@@ -81,6 +77,7 @@ const Attendance = () => {
     setFilterDate(today);
     setFilterStatus('');
     setFilterName('');
+    setIsLoading(true);
   };
 
   const handleFilterDateChange = (e: { target: { value: SetStateAction<string> } }) => {
@@ -104,8 +101,9 @@ const Attendance = () => {
         <Col md={3}>
           <Form.Control as='select' value={filterStatus} onChange={handleFilterStatusChange}>
             <option value=''>Filter by Status</option>
-            <option value='Present'>Present</option>
-            <option value='Absent'>Absent</option>
+            <option value='NULL'>NULL</option>
+            <option value='WORKING'>WORKING</option>
+            <option value='DONE'>DONE</option>
           </Form.Control>
         </Col>
         <Col md={3}>
@@ -181,7 +179,7 @@ const Attendance = () => {
               })
             ) : (
               <tr>
-                <td colSpan={6}>Loading...</td>
+                <td colSpan={6}>Chưa có dữ liệu để hiển thị</td>
               </tr>
             )}
           </tbody>
@@ -217,21 +215,24 @@ const Attendance = () => {
                     </tr>
                   );
                 } else {
+                  console.log(attendances);
+
                   return attendances.map((attendance) => (
                     <tr key={attendance._id}>
                       <td>{employee.name}</td>
                       <td>{new Date(attendance.workDate).toLocaleDateString()}</td>
                       <td>{attendance.workShift.shiftName}</td>
-                      <td>{new Date(attendance.checkInTime).toLocaleTimeString()}</td>
-                      <td>{new Date(attendance.checkOutTime).toLocaleTimeString()}</td>
+                      <td>{attendance.checkInTime ? new Date(attendance.checkInTime).toLocaleTimeString() : 'N/A'}</td>
+                      <td>{attendance.checkOutTime ? new Date(attendance.checkOutTime).toLocaleTimeString() : 'N/A'}</td>
                       <td>{attendance.status}</td>
+                      <td></td>
                     </tr>
                   ));
                 }
               })
             ) : (
               <tr>
-                <td>Loading...</td>
+                <td colSpan={6}>Chưa có dữ liệu để hiển thị</td>
               </tr>
             )}
           </tbody>
@@ -249,15 +250,15 @@ const Attendance = () => {
 
         <Tabs defaultActiveKey='home' id='justify-tab-example' className='mb-3' justify onSelect={clearFilter}>
           <Tab eventKey='home' title='Full-time'>
-            {renderFullTime()}
+            {isLoading ? <TableLoading columns={tableColumns} /> : renderFullTime()}
           </Tab>
           <Tab eventKey='profile' title='Part-time' onSelect={() => console.log('>>?')}>
-            {renderPartTime()}
+            {isLoading ? <TableLoading columns={tableColumns} /> : renderPartTime()}
           </Tab>
         </Tabs>
       </div>
 
-      <Pagination className='d-flex justify-content-end'>
+      {/* <Pagination className='d-flex justify-content-end'>
         <Pagination.First />
         <Pagination.Prev />
         <Pagination.Item>{1}</Pagination.Item>
@@ -273,7 +274,7 @@ const Attendance = () => {
         <Pagination.Item>{20}</Pagination.Item>
         <Pagination.Next />
         <Pagination.Last />
-      </Pagination>
+      </Pagination> */}
     </Container>
   );
 };

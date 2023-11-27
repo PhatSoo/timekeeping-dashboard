@@ -1,9 +1,11 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { Button, Col, Form, Modal, Row } from 'react-bootstrap';
+import { Button, Col, Container, Form, Modal, Row } from 'react-bootstrap';
 import avatarDefault from '@/../public/avatar.jpg';
 import { IEmployee, IRole } from '@/types/types';
 import Image from 'next/image';
+import { toast } from 'react-toastify';
+import { FaPray } from 'react-icons/fa';
 
 interface IProp {
   showModal: boolean;
@@ -16,8 +18,8 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
   const [checkFormData, setCheckFormData] = useState(false);
   const [roleList, setRoleList] = useState<IRole[]>([]);
   const avatarLink = `${process.env.API_SERVER}/${process.env.AVATAR_STORE}/${formData.avatar}`;
-  const srcValue = formData.avatar ? avatarLink : avatarDefault;
-
+  const [srcValue, setSrcValue] = useState(formData.avatar ? avatarLink : avatarDefault);
+  const [isSelectedFile, setIsSelectedFile] = useState<File>();
   const isAddNew = formData._id === '';
 
   useEffect(() => {
@@ -28,88 +30,167 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
 
   const handleSubmit = (event: { preventDefault: () => void }) => {
     event.preventDefault();
-    // Xử lý dữ liệu form tại đây
+
+    const data = isAddNew ? (({ _id, ...rest }) => rest)(formData) : formData;
+    const method = isAddNew ? 'POST' : 'PUT';
+
+    fetch('api/employee', {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+      .then((response) => response.json())
+      .then((result) => {
+        if (result.success) {
+          toast.success(result.message);
+          handleCloseModal();
+        } else {
+          toast.error(result.message);
+        }
+      });
   };
 
-  const handleDelete = () => {
-    alert('Bạn có chắc muốn xóa không?');
+  const handleDeleteClick = (event: { preventDefault: () => void }) => {
+    event.preventDefault();
+    const confirmation = confirm('Bạn có chắc muốn xóa không?');
+    if (confirmation) {
+      fetch('api/employee', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          data: [formData._id],
+        }),
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          if (result.success) {
+            toast.success(result.message);
+            handleCloseModal();
+          } else {
+            toast.error(result.message);
+          }
+        });
+    }
+  };
+
+  const handleFileChange = (event: { target: any; preventDefault: () => void }) => {
+    if (event.target.files && event.target.files[0]) {
+      setSrcValue(URL.createObjectURL(event.target.files[0]));
+      setIsSelectedFile(event.target.files[0]);
+    }
+  };
+
+  const handleChangeImage = (event: { preventDefault: () => void }) => {
+    event.preventDefault();
+
+    const data = new FormData();
+
+    data.append('_id', formData._id);
+
+    if (isSelectedFile) {
+      data.append('avatar', isSelectedFile);
+    }
+
+    for (let key in data.entries()) {
+      console.log(key);
+    }
+
+    fetch('api/upload', {
+      method: 'POST',
+      body: data,
+    })
+      .then((response) => response.json())
+      .then((result) => {
+        if (result.success) {
+          toast.success(result.message);
+          handleCloseModal();
+        } else {
+          toast.error(result.message);
+        }
+      });
   };
 
   return (
-    <Modal show={showModal} onHide={handleCloseModal} centered size='lg'>
+    <Modal show={showModal} onHide={handleCloseModal} centered {...(!isAddNew && { size: 'lg' })}>
       <Modal.Header closeButton>
         <Modal.Title>{isAddNew ? 'Thêm mới nhân viên' : 'Cập nhật thông tin nhân viên'}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <Row className='d-flex'>
-          <Col className='flex-grow-1'>
-            <Form onSubmit={handleSubmit} className='d-flex flex-column'>
-              <Form.Group className='mb-3'>
-                <Form.Label>Họ Tên</Form.Label>
-                <Form.Control name='name' type='text' required value={formData.name} onChange={handleChangeFormData} placeholder='Nhập họ và tên nhân viên...' />
-              </Form.Group>
+        {!isAddNew && (
+          <Container className='text-center'>
+            <Container>Mã nhân viên</Container>
+            <Container className='fw-bold'>{formData._id}</Container>
+          </Container>
+        )}
 
-              <Form.Group className='mb-3'>
-                <Form.Label>Email</Form.Label>
-                <Form.Control name='email' type='email' required value={formData.email} onChange={handleChangeFormData} placeholder='Nhập email...' />
-              </Form.Group>
-
-              <Form.Group className='mb-3'>
-                <Form.Check name='isPartTime' type='switch' id='isPartTime' label='Nhân viên part-time' checked={formData.isPartTime} onChange={handleChangeFormData} />
-              </Form.Group>
-
-              <Form.Group className='mb-3'>
-                <Form.Label>CCCD</Form.Label>
-                <Form.Control name='CCCD' type='number' pattern='\d{12}' required value={formData.CCCD} onChange={handleChangeFormData} placeholder='Nhập số căn cước công dân...' />
-              </Form.Group>
-
-              <Form.Group className='mb-3'>
-                <Form.Label>Giới tính</Form.Label>
-                <Form.Select name='sex' required value={formData.sex ? '1' : '0'} onChange={handleChangeFormData}>
-                  <option value=''>Chọn...</option>
-                  <option value='1'>Nam</option>
-                  <option value='0'>Nữ</option>
-                </Form.Select>
-              </Form.Group>
-
-              <Form.Group className='mb-3'>
-                <Form.Label>Vai trò</Form.Label>
-                <Form.Select name='roleId' required>
-                  <option value=''>Chọn...</option>
-                  {roleList &&
-                    roleList.map((role) => (
-                      <option key={role._id} value={role._id} selected={formData.roleId._id === role._id}>
-                        {role.typeName}
-                      </option>
-                    ))}
-                  {/* Thêm các tùy chọn cho các vai trò khác nhau tại đây */}
-                </Form.Select>
-              </Form.Group>
-
-              <Button variant='primary' type='submit'>
-                {isAddNew ? 'Thêm mới' : 'Cập nhật'}
-              </Button>
+        <Row className='align-items-end'>
+          <Col>
+            <Form onSubmit={handleSubmit}>
+              <Container className='d-flex flex-column'>
+                <Form.Group className='mb-3'>
+                  <Form.Label>Họ Tên</Form.Label>
+                  <Form.Control name='name' type='text' required value={formData.name} onChange={handleChangeFormData} placeholder='Nhập họ và tên nhân viên...' />
+                </Form.Group>
+                <Form.Group className='mb-3'>
+                  <Form.Label>Email</Form.Label>
+                  <Form.Control name='email' type='email' required value={formData.email} onChange={handleChangeFormData} placeholder='Nhập email...' />
+                </Form.Group>
+                <Form.Group className='mb-3'>
+                  <Form.Check name='isPartTime' type='switch' label='Làm việc part-time' checked={formData.isPartTime} onChange={handleChangeFormData} />
+                </Form.Group>
+                <Form.Group className='mb-3'>
+                  <Form.Label>CCCD</Form.Label>
+                  <Form.Control name='CCCD' type='text' max={12} pattern='\d{12}' required value={formData.CCCD} onChange={handleChangeFormData} placeholder='Nhập số căn cước công dân...' />
+                </Form.Group>
+                <Form.Group className='mb-3'>
+                  <Form.Label>Giới tính</Form.Label>
+                  <Form.Select name='sex' required value={formData.sex ? 1 : 0} onChange={handleChangeFormData}>
+                    <option value=''>Chọn...</option>
+                    <option value={1}>Nam</option>
+                    <option value={0}>Nữ</option>
+                  </Form.Select>
+                </Form.Group>
+                <Form.Group className='mb-3'>
+                  <Form.Label>Vai trò</Form.Label>
+                  <Form.Select name='roleId' required value={formData.roleId._id} onChange={handleChangeFormData}>
+                    <option value=''>Chọn...</option>
+                    {roleList &&
+                      roleList.map((role) => (
+                        <option key={role._id} value={role._id}>
+                          {role.typeName}
+                        </option>
+                      ))}
+                  </Form.Select>
+                </Form.Group>
+                <Button className='m-auto w-50 mt-3' variant='primary' type='submit'>
+                  {isAddNew ? 'Thêm mới' : 'Cập nhật'}
+                </Button>
+              </Container>
             </Form>
           </Col>
-          <Col className='d-flex flex-column justify-content-center align-items-center gap-3'>
-            {!isAddNew && (
-              <div className='text-center'>
-                <div>Mã nhân viên</div>
-                <div className='fw-bold'>{formData._id}</div>
-              </div>
-            )}
-            <div>
-              <Image src={srcValue} alt='Ảnh' width={300} height={400} />
-            </div>
-            <div>
-              <Button variant='dark'>Thay đổi ảnh</Button>
-            </div>
-          </Col>
+
+          {!isAddNew && (
+            <Col>
+              <Form encType='multipart/form-data' onSubmit={handleChangeImage} className='d-flex flex-column justify-content-center align-items-center gap-3'>
+                <Container className='d-flex flex-column gap-2 justify-content-center align-items-center'>
+                  <Image src={srcValue} alt='Ảnh' width={300} height={400} />
+
+                  <Form.Control required type='file' name='avatar' onChange={handleFileChange} />
+                </Container>
+                <Button className='m-auto w-50 mt-3' variant='warning' type='submit'>
+                  Thay đổi ảnh
+                </Button>
+              </Form>
+            </Col>
+          )}
         </Row>
       </Modal.Body>
+
       <Modal.Footer>
         {!isAddNew && (
-          <Button variant='danger' onClick={handleDelete}>
+          <Button variant='danger' onClick={handleDeleteClick}>
             Xóa
           </Button>
         )}

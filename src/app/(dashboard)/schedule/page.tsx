@@ -1,7 +1,11 @@
 'use client';
+import TableLoading from '@/components/Component.TableLoading';
 import { IEmployee, ISchedule, IShift } from '@/types/types';
 import React, { SetStateAction, useEffect, useState } from 'react';
-import { Badge, Button, Col, Container, Form, Row, Stack, Table } from 'react-bootstrap';
+import { Accordion, Badge, Button, Col, Container, FloatingLabel, Form, Row, Stack, Table } from 'react-bootstrap';
+import { toast } from 'react-toastify';
+
+const tableColumns = ['#', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật'];
 
 const Schedule = () => {
   const [filterDate, setFilterDate] = useState('');
@@ -10,6 +14,8 @@ const Schedule = () => {
   const [parttimeData, setParttimeData] = useState<IEmployee[]>([]);
   const [workData, setWorkData] = useState<ISchedule[]>([]);
   const [days, setDays] = useState<Date[]>([]);
+  const [sPd, setsPd] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Set date for next week
   useEffect(() => {
@@ -39,7 +45,8 @@ const Schedule = () => {
   useEffect(() => {
     fetch('/api/schedule')
       .then((res) => res.json())
-      .then((data) => setWorkData(data.data));
+      .then((data) => setWorkData(data.data))
+      .finally(() => setIsLoading(false));
   }, []);
 
   const clearFilter = () => {
@@ -172,6 +179,24 @@ const Schedule = () => {
   //   },
   // ];
 
+  const handleSchedule = (e: { preventDefault: () => void }) => {
+    e.preventDefault();
+
+    fetch('api/schedule', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: workData, num: sPd }),
+    })
+      .then((response) => response.json())
+      .then((result) => {
+        if (result.success) {
+          toast.success(result.message);
+        } else {
+          toast.error(result.message);
+        }
+      });
+  };
+
   const renderFilter = () => {
     return (
       <Row className='mb-3 d-flex justify-content-end'>
@@ -192,11 +217,30 @@ const Schedule = () => {
     );
   };
 
-  return (
-    <Container fluid>
-      {renderFilter()}
+  const renderButton = () => {
+    return (
+      <Accordion onSelect={(key, event) => setsPd(0)}>
+        <Accordion.Item eventKey='0'>
+          <Accordion.Header>Sắp xếp lịch làm việc</Accordion.Header>
+          <Accordion.Body>
+            <Form onSubmit={handleSchedule}>
+              <FloatingLabel label='Số lượng nhân viên cho mỗi ca' className='mb-3'>
+                <Form.Control type='number' placeholder='1' min={1} value={sPd} onChange={(e) => setsPd(parseInt(e.target.value))} />
+              </FloatingLabel>
 
-      <Table striped bordered hover className='align-middle text-center' style={{ tableLayout: 'fixed' }}>
+              <Button variant='info' type='submit'>
+                Sắp xếp
+              </Button>
+            </Form>
+          </Accordion.Body>
+        </Accordion.Item>
+      </Accordion>
+    );
+  };
+
+  const renderTable = () => {
+    return (
+      <Table striped bordered hover className='align-middle text-center mt-5' style={{ tableLayout: 'fixed' }}>
         <thead>
           <tr>
             <th>#</th>
@@ -207,7 +251,6 @@ const Schedule = () => {
                 {day.getDate()}/{day.getMonth() + 1}
               </th>
             ))}
-            {/* <th>Actions</th> */}
           </tr>
         </thead>
         <tbody>
@@ -231,18 +274,23 @@ const Schedule = () => {
                     </td>
                   );
                 })}
-                {/* <td>
-                <Button variant='primary'>Action 1</Button> <Button variant='secondary'>Action 2</Button>
-              </td> */}
               </tr>
             ))
           ) : (
             <tr>
-              <td>Loaing...</td>
+              <td colSpan={tableColumns.length}>Chưa có dữ liệu để hiển thị</td>
             </tr>
           )}
         </tbody>
       </Table>
+    );
+  };
+
+  return (
+    <Container fluid>
+      {renderFilter()}
+      {renderButton()}
+      {isLoading ? <TableLoading columns={tableColumns} /> : renderTable()}
     </Container>
   );
 };

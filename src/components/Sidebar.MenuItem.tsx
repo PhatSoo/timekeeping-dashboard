@@ -3,10 +3,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { FaHome, FaUserCheck, FaChartBar, FaBell, FaHourglassHalf, FaCalendarAlt, FaUsers, FaClipboard, FaUserShield, FaUserTag } from 'react-icons/fa';
 const data = [
-  { name: 'Home', icon: <FaHome />, link: '/', notify: false },
+  { name: 'Dashboard', icon: <FaHome />, link: '/', notify: false },
   { name: 'Role', icon: <FaUserTag />, link: '/role', notify: false },
-  { name: 'Employee', icon: <FaUsers />, link: '/employee', notify: false },
   { name: 'Shift', icon: <FaHourglassHalf />, link: '/shift', notify: false },
+  { name: 'Employee', icon: <FaUsers />, link: '/employee', notify: false },
   { name: 'Attendance', icon: <FaUserCheck />, link: '/attendance', notify: false },
   { name: 'Part-time Schedule', icon: <FaCalendarAlt />, link: '/schedule', notify: false },
   { name: 'Form Requests', icon: <FaClipboard />, link: '/form-request', notify: true },

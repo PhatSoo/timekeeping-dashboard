@@ -2,6 +2,7 @@
 import { IRole } from '@/types/types';
 import { useEffect, useState } from 'react';
 import { Accordion, Button, Card, Container, FloatingLabel, Form, Toast, ToastContainer, useAccordionButton } from 'react-bootstrap';
+import { toast } from 'react-toastify';
 
 const Role = () => {
   const [isAddNew, setIsAddNew] = useState(false);
@@ -11,16 +12,15 @@ const Role = () => {
     typeName: '',
   });
   const [listData, setListData] = useState<IRole[]>([]);
-  const [isSuccess, setIsSuccess] = useState<{ success: boolean; message: string }>();
-  const [showToast, setShowToast] = useState(false);
   const [activeKey, setActiveKey] = useState(null);
+  const [success, setSuccess] = useState(0);
 
   // Get all roles
   useEffect(() => {
     fetch('api/role')
       .then((response) => response.json())
       .then((result) => setListData(result.data));
-  }, [showToast]);
+  }, [success]);
 
   function CustomToggle({ eventKey }: any) {
     const decoratedOnClick = useAccordionButton(eventKey, () => {
@@ -58,8 +58,13 @@ const Role = () => {
     })
       .then((response) => response.json())
       .then((result) => {
-        setIsSuccess({ success: result.success, message: result.message });
-        setShowToast(true);
+        if (result.success) {
+          toast.success(result.message);
+          setFormDataAdd('');
+          setSuccess(success + 1);
+        } else {
+          toast.error(result.message);
+        }
       });
   };
 
@@ -73,9 +78,13 @@ const Role = () => {
     })
       .then((response) => response.json())
       .then((result) => {
-        setActiveKey(null);
-        setIsSuccess({ success: result.success, message: result.message });
-        setShowToast(true);
+        if (result.success) {
+          toast.success(result.message);
+          setSuccess(success + 1);
+          setActiveKey(null);
+        } else {
+          toast.error(result.message);
+        }
       });
   };
 
@@ -89,9 +98,13 @@ const Role = () => {
     })
       .then((response) => response.json())
       .then((result) => {
-        setActiveKey(null);
-        setIsSuccess({ success: result.success, message: result.message });
-        setShowToast(true);
+        if (result.success) {
+          toast.success(result.message);
+          setSuccess(success + 1);
+          setActiveKey(null);
+        } else {
+          toast.error(result.message);
+        }
       });
   };
 
@@ -149,25 +162,11 @@ const Role = () => {
     );
   };
 
-  const renderToast = () => {
-    return (
-      <ToastContainer position='top-end'>
-        <Toast onClose={() => setShowToast(false)} show={showToast} delay={3000} autohide bg={isSuccess?.success ? 'success' : 'warning'}>
-          <Toast.Header>
-            <strong className='mr-auto'>Thông báo</strong>
-          </Toast.Header>
-          <Toast.Body>{isSuccess?.message}</Toast.Body>
-        </Toast>
-      </ToastContainer>
-    );
-  };
-
   return (
     <Container>
       {renderAddNew()}
       <h1 className='my-5 text-info'>Danh sách Roles</h1>
       {renderData()}
-      {renderToast()}
     </Container>
   );
 };

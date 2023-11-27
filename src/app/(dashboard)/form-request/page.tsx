@@ -1,7 +1,10 @@
 'use client';
+import TableLoading from '@/components/Component.TableLoading';
 import { IFormRequest } from '@/types/types';
 import { SetStateAction, useEffect, useState } from 'react';
 import { Col, Container, Form, Row, Table } from 'react-bootstrap';
+
+const tableColumns = ['#', 'Nhân viên', 'Từ ngày', 'Đến ngày', 'Số ngày nghỉ', 'Trạng thái', 'Lý do'];
 
 const FormRequest = () => {
   const [filterDateFrom, setFilterDateFrom] = useState('');
@@ -9,12 +12,14 @@ const FormRequest = () => {
   const [filterStatus, setFilterStatus] = useState('');
   const [filterName, setFilterName] = useState('');
   const [data, setData] = useState<IFormRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Get all form-request
   useEffect(() => {
     fetch('api/form-request')
       .then((response) => response.json())
-      .then((result) => setData(result.data));
+      .then((result) => setData(result.data))
+      .finally(() => setIsLoading(false));
   }, []);
 
   const countDate = (time1: Date, time2: Date) => {
@@ -77,6 +82,7 @@ const FormRequest = () => {
         <thead>
           <tr>
             <th>#</th>
+            <th>Nhân viên</th>
             <th>Từ ngày</th>
             <th>Đến ngày</th>
             <th>Số ngày nghỉ</th>
@@ -86,19 +92,24 @@ const FormRequest = () => {
           </tr>
         </thead>
         <tbody>
-          {data.length > 0
-            ? data.map((form, idx) => (
-                <tr key={idx}>
-                  <td>{idx + 1}</td>
-                  <td>{new Date(form.startDate).toLocaleDateString()}</td>
-                  <td>{new Date(form.endDate).toLocaleDateString()}</td>
-                  <td>{countDate(form.startDate, form.endDate)}</td>
-                  <td>{form.status}</td>
-                  <td>{form.reason}</td>
-                </tr>
-              ))
-            : 'Loading...'}
-          <td></td>
+          {data.length > 0 ? (
+            data.map((form, idx) => (
+              <tr key={idx}>
+                <td>{idx + 1}</td>
+                <td>{form.employee.name}</td>
+                <td>{new Date(form.startDate).toLocaleDateString()}</td>
+                <td>{new Date(form.endDate).toLocaleDateString()}</td>
+                <td>{countDate(form.startDate, form.endDate)}</td>
+                <td>{form.status}</td>
+                <td>{form.reason}</td>
+                <td></td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={tableColumns.length}>Chưa có dữ liệu để hiển thị</td>
+            </tr>
+          )}
         </tbody>
       </Table>
     );
@@ -109,7 +120,7 @@ const FormRequest = () => {
       <h4 className='text-primary mb-4'>Danh sách các đơn xin nghỉ</h4>
       {renderFilter()}
 
-      {renderTable()}
+      {isLoading ? <TableLoading columns={tableColumns} /> : renderTable()}
     </Container>
   );
 };
