@@ -1,6 +1,9 @@
+import { fetchWithAuth } from '../config';
+
 // Get all employees
 export const GET = async () => {
-  const data = await fetch(`${process.env.API_SERVER}/api/employee`, { cache: 'no-store' }).then((res) => res.json());
+  const data = await fetchWithAuth(`${process.env.API_SERVER}/api/employee`, { cache: 'no-store' }).then((res) => res.json());
+
   return Response.json(data);
 };
 
@@ -8,11 +11,8 @@ export const GET = async () => {
 export const POST = async (req: Request) => {
   let data = await req.json();
   data = { ...data, password: '123456789' };
-  return fetch(`${process.env.API_SERVER}/api/employee`, {
+  return fetchWithAuth(`${process.env.API_SERVER}/api/employee`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify(data),
   })
     .then((response) => response.json())
@@ -22,11 +22,18 @@ export const POST = async (req: Request) => {
 export const PUT = async (req: Request) => {
   const data = await req.json();
 
-  return fetch(`${process.env.API_SERVER}/api/employee`, {
+  return fetchWithAuth(`${process.env.API_SERVER}/api/employee`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    body: JSON.stringify(data),
+  })
+    .then((response) => response.json())
+    .then((result) => Response.json(result));
+};
+
+export const PATCH = async (req: Request) => {
+  const data = await req.json();
+  return fetchWithAuth(`${process.env.API_SERVER}/api/employee`, {
+    method: 'PATCH',
     body: JSON.stringify(data),
   })
     .then((response) => response.json())
@@ -38,21 +45,15 @@ export const DELETE = async (req: Request) => {
 
   if (data.length === 1) {
     // Delete 1 employee
-    return fetch(`${process.env.API_SERVER}/api/employee/${data[0]}`, {
+    return fetchWithAuth(`${process.env.API_SERVER}/api/employee/${data[0]}`, {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
     })
       .then((response) => response.json())
       .then((result) => Response.json(result));
   } else {
     // Delete multiple
-    return fetch(`${process.env.API_SERVER}/api/employee`, {
+    return fetchWithAuth(`${process.env.API_SERVER}/api/employee`, {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({ data }),
     })
       .then((response) => response.json())

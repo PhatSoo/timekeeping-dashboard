@@ -6,7 +6,7 @@ export interface IEmployee {
   isPartTime: boolean;
   sex: boolean;
   avatar: string;
-  roleId: {
+  role: {
     _id: string;
     typeName: string;
   };
@@ -74,5 +74,5 @@ export interface IFormRequest {
     shiftName: string;
   };
   reason: string;
-  status: number;
+  status: string;
 }

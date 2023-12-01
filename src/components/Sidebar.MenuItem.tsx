@@ -1,7 +1,9 @@
 'use client';
+import { FormRequestContext } from '@/context/FormRequest';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FaHome, FaUserCheck, FaChartBar, FaBell, FaHourglassHalf, FaCalendarAlt, FaUsers, FaClipboard, FaUserShield, FaUserTag } from 'react-icons/fa';
+import { useEffect, useState, useContext } from 'react';
+import { FaHome, FaUserCheck, FaChartBar, FaBell, FaHourglassHalf, FaCalendarAlt, FaUsers, FaClipboard, FaUserTag } from 'react-icons/fa';
 const data = [
   { name: 'Dashboard', icon: <FaHome />, link: '/', notify: false },
   { name: 'Role', icon: <FaUserTag />, link: '/role', notify: false },
@@ -18,13 +20,14 @@ const inActive: string = 'link-secondary';
 
 const MenuItem = () => {
   const pathname = usePathname();
+  const formContext = useContext(FormRequestContext);
 
   const renderItem = (item: { name: string; icon: JSX.Element; link: string; notify: boolean }, idx: number) => {
     return (
       <Link href={item.link} key={idx} className={`d-flex position-relative align-items-center gap-3 border p-2 rounded hover text-decoration-none ${pathname === item.link ? active : inActive}`}>
         {item.icon}
         {item.name}
-        {item.notify && (
+        {item.notify && formContext && formContext?.pending > 0 && (
           <div className='position-absolute top-0 start-100 translate-middle rounded-circle p-1 d-flex justify-content-center align-items-center' style={{ backgroundColor: '#e41e3f' }}>
             <FaBell color={'#fff'} />
           </div>

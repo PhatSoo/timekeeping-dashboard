@@ -1,7 +1,7 @@
 'use client';
 
 import { SetStateAction, cloneElement, useEffect, useState } from 'react';
-import { Button, Col, Container, Form, Pagination, Row, Tab, Table, Tabs } from 'react-bootstrap';
+import { Col, Container, Form, Pagination, Row, Tab, Table, Tabs } from 'react-bootstrap';
 import { FaCalendarAlt } from 'react-icons/fa';
 import { BsFillPlayFill, BsFillStopFill } from 'react-icons/bs';
 import { IEmployee, IFulltime, IPartTime } from '@/types/types';
@@ -20,12 +20,12 @@ const Attendance = () => {
   const [fulltimeAttendanceData, setFulltimeAttendanceData] = useState<IFulltime[]>([]);
   const [parttimeAttendanceData, setParttimeAttendanceData] = useState<IPartTime[]>([]);
 
-  // Get all full-time employees
+  // Get all full-time employees for first render
   useEffect(() => {
     fetch('api/employee/full-time')
       .then((response) => response.json())
       .then((result) => setEmployeeFull(result.data));
-  }, [isLoading]);
+  }, []);
 
   // Get attendance of Full-time employee by Day
   useEffect(() => {
@@ -43,19 +43,14 @@ const Attendance = () => {
     return map;
   }, {});
 
-  // Get all part-time employees
-  useEffect(() => {
-    fetch('api/employee/part-time')
-      .then((response) => response.json())
-      .then((result) => setEmployeePart(result.data));
-  }, [isLoading]);
-
   // Get attendance of Part-time employee by Day
   useEffect(() => {
     fetch(`api/attendance/shift?date=${filterDate}`)
       .then((response) => response.json())
       .then((result) => setParttimeAttendanceData(result.data));
   }, [filterDate, isLoading]);
+
+  // useEffect(() => {}, [employeeFull, employeePart]);
 
   const attendanceShiftMap = parttimeAttendanceData.reduce<{ [key: string]: typeof parttimeAttendanceData }>((map, attendance) => {
     if (!map[attendance.employee]) {
@@ -65,19 +60,22 @@ const Attendance = () => {
     return map;
   }, {});
 
-  // const filteredData = fulltimeAttendanceData.filter((attendance) => {
-  //   const matchDate = filterDate === '' || attendance.date === filterDate;
-  //   const matchStatus = filterStatus === '' || attendance.status === filterStatus;
-  //   const matchName = filterName === '' || attendance.name.toLowerCase().includes(filterName.toLowerCase());
+  const clearFilter = (k: any) => {
+    setIsLoading(true);
+    if (k === 'full-time') {
+      fetch('api/employee/full-time')
+        .then((response) => response.json())
+        .then((result) => setEmployeeFull(result.data));
+    } else {
+      fetch('api/employee/part-time')
+        .then((response) => response.json())
+        .then((result) => setEmployeePart(result.data))
+        .finally(() => setIsLoading(false));
+    }
 
-  //   return matchDate && matchStatus && matchName;
-  // });
-
-  const clearFilter = () => {
     setFilterDate(today);
     setFilterStatus('');
     setFilterName('');
-    setIsLoading(true);
   };
 
   const handleFilterDateChange = (e: { target: { value: SetStateAction<string> } }) => {
@@ -204,7 +202,7 @@ const Attendance = () => {
             </tr>
           </thead>
           <tbody>
-            {employeePart.length > 0 ? (
+            {employeePart.length > 0 && !isLoading ? (
               employeePart.map((employee) => {
                 const attendances = attendanceShiftMap[employee._id] || [];
                 if (attendances.length === 0) {
@@ -215,8 +213,6 @@ const Attendance = () => {
                     </tr>
                   );
                 } else {
-                  console.log(attendances);
-
                   return attendances.map((attendance) => (
                     <tr key={attendance._id}>
                       <td>{employee.name}</td>
@@ -248,11 +244,11 @@ const Attendance = () => {
 
         {renderCurrentShift()}
 
-        <Tabs defaultActiveKey='home' id='justify-tab-example' className='mb-3' justify onSelect={clearFilter}>
-          <Tab eventKey='home' title='Full-time'>
+        <Tabs defaultActiveKey='full-time' id='justify-tab-example' className='mb-3' justify onSelect={(k) => clearFilter(k)}>
+          <Tab eventKey='full-time' title='Full-time'>
             {isLoading ? <TableLoading columns={tableColumns} /> : renderFullTime()}
           </Tab>
-          <Tab eventKey='profile' title='Part-time' onSelect={() => console.log('>>?')}>
+          <Tab eventKey='part-time' title='Part-time'>
             {isLoading ? <TableLoading columns={tableColumns} /> : renderPartTime()}
           </Tab>
         </Tabs>

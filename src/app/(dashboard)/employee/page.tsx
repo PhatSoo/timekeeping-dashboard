@@ -15,7 +15,7 @@ const nullData = {
   isPartTime: false,
   CCCD: '',
   sex: false,
-  roleId: {
+  role: {
     _id: '',
     typeName: '',
   },
@@ -28,11 +28,13 @@ const Employee = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [data, setData] = useState<IEmployee[]>([]);
+  const [filteredData, setFilteredData] = useState<IEmployee[]>([]);
   const [selectMultiple, setSelectMultiple] = useState(false);
   const [selectAll, setSelectAll] = useState(false);
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [formData, setFormData] = useState<IEmployee>(nullData);
   const [isSuccess, setIsSuccess] = useState(0);
+  const [search, setSearch] = useState('');
 
   // Get data all employees
   useEffect(() => {
@@ -41,6 +43,19 @@ const Employee = () => {
       .then((result) => setData(result.data))
       .finally(() => setIsLoading(false));
   }, [showModal, isSuccess]);
+
+  // Filtered employee by name
+  useEffect(() => {
+    if (search.trim() === '') {
+      setFilteredData(data);
+    } else {
+      const filtered = data.filter((item) => {
+        // Thay 'field' bằng trường bạn muốn tìm kiếm trong đối tượng shift
+        return item.name.toLowerCase().includes(search.toLowerCase());
+      });
+      setFilteredData(filtered);
+    }
+  }, [data, search]);
 
   const handleShowModal = (idx?: number) => {
     if (data && idx !== undefined) {
@@ -154,7 +169,7 @@ const Employee = () => {
           </tr>
         </thead>
         <tbody>
-          {data.map((item, idx) => (
+          {filteredData.map((item, idx) => (
             <tr key={idx}>
               {selectMultiple && (
                 <td>
@@ -164,7 +179,7 @@ const Employee = () => {
               <td>{idx + 1}</td>
               <td>{item.name}</td>
               <td>{item.email}</td>
-              <td>{item.roleId.typeName}</td>
+              <td>{item.role.typeName}</td>
               <td className='text-end'>
                 <BsThreeDotsVertical onClick={() => handleShowModal(idx)} />
               </td>
@@ -177,7 +192,9 @@ const Employee = () => {
 
   return (
     <>
-      <NavbarComponent />
+      <NavbarComponent searchKey={search} setSearchKey={setSearch} />
+
+      <h1 className='text-info mb-5'>Danh sách các nhân viên</h1>
 
       <div className='my-2 d-flex align-items-center justify-content-between'>
         <Form.Check checked={selectMultiple} type='checkbox' label={'Chọn nhiều'} onChange={handleSelectMultiple} />

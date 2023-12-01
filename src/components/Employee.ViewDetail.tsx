@@ -1,11 +1,10 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { Button, Col, Container, Form, Modal, Row } from 'react-bootstrap';
+import { Button, Col, Container, Form, Modal, Row, Spinner } from 'react-bootstrap';
 import avatarDefault from '@/../public/avatar.jpg';
 import { IEmployee, IRole } from '@/types/types';
 import Image from 'next/image';
 import { toast } from 'react-toastify';
-import { FaPray } from 'react-icons/fa';
 
 interface IProp {
   showModal: boolean;
@@ -15,11 +14,11 @@ interface IProp {
 }
 
 const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChangeFormData }: IProp) => {
-  const [checkFormData, setCheckFormData] = useState(false);
   const [roleList, setRoleList] = useState<IRole[]>([]);
   const avatarLink = `${process.env.API_SERVER}/${process.env.AVATAR_STORE}/${formData.avatar}`;
   const [srcValue, setSrcValue] = useState(formData.avatar ? avatarLink : avatarDefault);
   const [isSelectedFile, setIsSelectedFile] = useState<File>();
+  const [resetLoading, setResetLoading] = useState(false);
   const isAddNew = formData._id === '';
 
   useEffect(() => {
@@ -93,10 +92,6 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
       data.append('avatar', isSelectedFile);
     }
 
-    for (let key in data.entries()) {
-      console.log(key);
-    }
-
     fetch('api/upload', {
       method: 'POST',
       body: data,
@@ -110,6 +105,27 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
           toast.error(result.message);
         }
       });
+  };
+
+  const handleResetPassword = (event: { preventDefault: () => void }) => {
+    event.preventDefault();
+    setResetLoading(true);
+    fetch('api/employee', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ id: formData._id }),
+    })
+      .then((response) => response.json())
+      .then((result) => {
+        if (result.success) {
+          toast.success(result.message);
+        } else {
+          toast.error(result.message);
+        }
+      })
+      .finally(() => setResetLoading(false));
   };
 
   return (
@@ -154,7 +170,7 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
                 </Form.Group>
                 <Form.Group className='mb-3'>
                   <Form.Label>Vai trò</Form.Label>
-                  <Form.Select name='roleId' required value={formData.roleId._id} onChange={handleChangeFormData}>
+                  <Form.Select name='role' required value={formData.role._id} onChange={handleChangeFormData}>
                     <option value=''>Chọn...</option>
                     {roleList &&
                       roleList.map((role) => (
@@ -163,8 +179,24 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
                         </option>
                       ))}
                   </Form.Select>
+                  {isAddNew ? (
+                    <span className='text-danger fst-italic'>* Chú ý: Mật khẩu mặc định là `123456789`</span>
+                  ) : (
+                    <Container className='mt-3 d-flex justify-content-center'>
+                      {resetLoading ? (
+                        <Button variant='info' disabled>
+                          <Spinner as='span' animation='grow' size='sm' role='status' aria-hidden='true' />
+                          Loading...
+                        </Button>
+                      ) : (
+                        <Button variant='info' onClick={handleResetPassword}>
+                          Reset Password!
+                        </Button>
+                      )}
+                    </Container>
+                  )}
                 </Form.Group>
-                <Button className='m-auto w-50 mt-3' variant='primary' type='submit'>
+                <Button onClick={handleResetPassword} className='m-auto w-50 mt-3' variant='primary' type='submit'>
                   {isAddNew ? 'Thêm mới' : 'Cập nhật'}
                 </Button>
               </Container>

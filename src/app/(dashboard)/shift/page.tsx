@@ -232,9 +232,8 @@ const Shift = () => {
 
   return (
     <>
-      <NavbarComponent />
-
       {renderAddNew()}
+      <h1 className='text-info'>Danh sách các ca làm việc</h1>
       <div className='d-flex gap-5 mt-5 flex-wrap justify-content-center align-items-center'>{isLoading ? <CardLoading /> : data.length > 0 ? renderCard() : 'Chưa có dữ liệu để hiển thị'}</div>
       <ConfirmModal showModal={showModal} setShowModal={setShowModal} handleConfirmModal={handleConfirmModal} />
     </>

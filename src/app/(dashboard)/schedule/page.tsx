@@ -1,27 +1,36 @@
 'use client';
 import TableLoading from '@/components/Component.TableLoading';
 import { IEmployee, ISchedule, IShift } from '@/types/types';
-import React, { SetStateAction, useEffect, useState } from 'react';
-import { Accordion, Badge, Button, Col, Container, FloatingLabel, Form, Row, Stack, Table } from 'react-bootstrap';
+import React, { SetStateAction, useEffect, useRef, useState } from 'react';
+import { Accordion, Badge, Button, Col, Container, FloatingLabel, Form, Overlay, Row, Stack, Table, Tooltip } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 
 const tableColumns = ['#', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật'];
+const today = new Date();
+const nextMonday = new Date(today.setDate(today.getDate() + ((1 + 7 - today.getDay()) % 7))).toISOString().split('T')[0];
+
+// const nextMonday = today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1) + 7;
+// .toISOString().split('T')[0];
 
 const Schedule = () => {
-  const [filterDate, setFilterDate] = useState('');
+  const [filterDate, setFilterDate] = useState(nextMonday);
   const [filterStatus, setFilterStatus] = useState('');
   const [filterName, setFilterName] = useState('');
   const [parttimeData, setParttimeData] = useState<IEmployee[]>([]);
+  const [filteredData, setFilteredData] = useState<IEmployee[]>([]);
   const [workData, setWorkData] = useState<ISchedule[]>([]);
   const [days, setDays] = useState<Date[]>([]);
   const [sPd, setsPd] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [showTooltip, setShowToolTip] = useState(false);
+
+  const target = useRef(null);
 
   // Set date for next week
   useEffect(() => {
-    const date = new Date();
-    date.setDate(date.getDate() - date.getDay() + (date.getDay() === 0 ? -6 : 1)); // next Monday
-    // date.setDate(date.getDate() - date.getDay() + (date.getDay() === 0 ? -6 : 1) - 7); // last Monday
+    const date = new Date(filterDate);
+    const monday = date.getDate() - date.getDay() + (date.getDay() === 0 ? -6 : 1);
+    date.setDate(monday); // current Monday in same week
 
     const newDays = Array(7)
       .fill(0)
@@ -32,22 +41,22 @@ const Schedule = () => {
       });
 
     setDays(newDays);
-  }, []);
+  }, [filterDate]);
 
   // Get all part-time employees
   useEffect(() => {
     fetch('/api/employee/part-time')
-      .then((res) => res.json())
-      .then((data) => setParttimeData(data.data));
+      .then((response) => response.json())
+      .then((result) => setParttimeData(result.data));
   }, []);
 
   // Get all schedules
   useEffect(() => {
-    fetch('/api/schedule')
-      .then((res) => res.json())
-      .then((data) => setWorkData(data.data))
+    fetch(`/api/schedule?date=${filterDate}`)
+      .then((response) => response.json())
+      .then((result) => setWorkData(result.data))
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [filterDate]);
 
   const clearFilter = () => {
     setFilterDate('');
@@ -180,21 +189,29 @@ const Schedule = () => {
   // ];
 
   const handleSchedule = (e: { preventDefault: () => void }) => {
-    e.preventDefault();
+    // Kiểm tra xem đến giờ được phép xếp ca chưa ?
+    const now = new Date();
 
-    fetch('api/schedule', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: workData, num: sPd }),
-    })
-      .then((response) => response.json())
-      .then((result) => {
-        if (result.success) {
-          toast.success(result.message);
-        } else {
-          toast.error(result.message);
-        }
-      });
+    const checkTime = now.getDay() === 0 && now.getHours() >= 16 && now.getMinutes() >= 30;
+
+    if (checkTime) {
+      fetch('api/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: workData, num: sPd }),
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          if (result.success) {
+            toast.success(result.message);
+          } else {
+            toast.error(result.message);
+          }
+        });
+    } else {
+      e.preventDefault();
+      setShowToolTip(!showTooltip);
+    }
   };
 
   const renderFilter = () => {
@@ -228,9 +245,23 @@ const Schedule = () => {
                 <Form.Control type='number' placeholder='1' min={1} value={sPd} onChange={(e) => setsPd(parseInt(e.target.value))} />
               </FloatingLabel>
 
-              <Button variant='info' type='submit'>
+              {showTooltip && (
+                <Container className='mb-3'>
+                  <span className='text-danger fst-italic'>Thời gian xếp lịch là từ 16h30 ngày Chủ Nhật</span>
+                </Container>
+              )}
+
+              <Button ref={target} variant='info' type='submit'>
                 Sắp xếp
               </Button>
+
+              <Overlay target={target.current} show={showTooltip} placement='right'>
+                {(props) => (
+                  <Tooltip id='overlay-example' {...props}>
+                    Chưa đến giờ xếp lịch
+                  </Tooltip>
+                )}
+              </Overlay>
             </Form>
           </Accordion.Body>
         </Accordion.Item>
@@ -260,6 +291,8 @@ const Schedule = () => {
                 <td>{employee.name}</td>
                 {days.map((day, index) => {
                   const workDay = workData.find((data) => data.employee._id === employee._id && new Date(data.workDate).toDateString() === day.toDateString());
+                  // console.log(workDay);
+
                   return (
                     <td key={index}>
                       <Stack gap={2}>

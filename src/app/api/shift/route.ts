@@ -1,17 +1,16 @@
+import { fetchWithAuth } from '../config';
+
 // Get all shifts
 export const GET = async () => {
-  const data = await fetch(`${process.env.API_SERVER}/api/work-shift`, { cache: 'no-store' }).then(async (res) => await res.json());
+  const data = await fetchWithAuth(`${process.env.API_SERVER}/api/work-shift`, { cache: 'no-store' }).then(async (res) => await res.json());
   return Response.json(data);
 };
 
 export const POST = async (req: Request) => {
   const data = await req.json();
 
-  return fetch(`${process.env.API_SERVER}/api/work-shift`, {
+  return fetchWithAuth(`${process.env.API_SERVER}/api/work-shift`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify(data),
   })
     .then((response) => response.json())
@@ -21,11 +20,8 @@ export const POST = async (req: Request) => {
 export const PUT = async (req: Request) => {
   const data = await req.json();
 
-  return fetch(`${process.env.API_SERVER}/api/work-shift`, {
+  return fetchWithAuth(`${process.env.API_SERVER}/api/work-shift`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify(data),
   })
     .then((response) => response.json())
@@ -35,11 +31,8 @@ export const PUT = async (req: Request) => {
 export const DELETE = async (req: Request) => {
   const data = await req.json();
 
-  return fetch(`${process.env.API_SERVER}/api/work-shift`, {
+  return fetchWithAuth(`${process.env.API_SERVER}/api/work-shift`, {
     method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify(data),
   })
     .then((response) => response.json())

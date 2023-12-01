@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Card from '@/components/App.CardItem';
-import Layout from '@/components/App.Layout';
 import CardLoading from '@/components/Component.CardLoading';
 
 const App = () => {
@@ -38,13 +37,13 @@ const App = () => {
   const formattedDate = date.toLocaleDateString('vi-VN', options as Intl.DateTimeFormatOptions);
 
   return (
-    <Layout>
+    <>
       <div className='fs-4 fw-bold text-dark text-center p-4 bg-light border border-2 border-secondary rounded-3'>{formattedDate}</div>
 
       <div className='d-flex justify-content-center p-5 gap-5 flex-wrap'>
         {isLoading ? <CardLoading /> : data.length > 0 ? data.map((item, idx) => <Card key={idx} Title={item.title} Content={item.total} Href={item.link} />) : <div>Chưa có dữ liệu để hiển thị</div>}
       </div>
-    </Layout>
+    </>
   );
 };
 

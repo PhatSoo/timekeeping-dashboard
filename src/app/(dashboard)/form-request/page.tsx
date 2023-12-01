@@ -1,18 +1,31 @@
 'use client';
 import TableLoading from '@/components/Component.TableLoading';
+import { FormRequestContext } from '@/context/FormRequest';
 import { IFormRequest } from '@/types/types';
-import { SetStateAction, useEffect, useState } from 'react';
-import { Col, Container, Form, Row, Table } from 'react-bootstrap';
+import { SetStateAction, useContext, useEffect, useState } from 'react';
+import { Badge, Button, Col, Container, Form, Offcanvas, Row, Table } from 'react-bootstrap';
+import { FaArrowAltCircleRight } from 'react-icons/fa';
+import { toast } from 'react-toastify';
 
 const tableColumns = ['#', 'Nhân viên', 'Từ ngày', 'Đến ngày', 'Số ngày nghỉ', 'Trạng thái', 'Lý do'];
+const badgeColors = {
+  PENDING: 'warning',
+  ACCEPTED: 'success',
+  DENIED: 'danger',
+};
 
 const FormRequest = () => {
-  const [filterDateFrom, setFilterDateFrom] = useState('');
-  const [filterDateTo, setFilterDateTo] = useState('');
+  const [filterDate, setFilterDate] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterName, setFilterName] = useState('');
   const [data, setData] = useState<IFormRequest[]>([]);
+  const [filterData, setFilterData] = useState<IFormRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showInfo, setShowInfo] = useState(false);
+  const [selectedIdx, setSelectedIdx] = useState<number>(-1);
+  const [updateSuccess, setUpdateSuccess] = useState(0);
+
+  const formContext = useContext(FormRequestContext);
 
   // Get all form-request
   useEffect(() => {
@@ -20,7 +33,11 @@ const FormRequest = () => {
       .then((response) => response.json())
       .then((result) => setData(result.data))
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [updateSuccess]);
+
+  useEffect(() => {
+    setFilterData(data);
+  }, [data]);
 
   const countDate = (time1: Date, time2: Date) => {
     const date1 = new Date(time1);
@@ -33,39 +50,77 @@ const FormRequest = () => {
     return Math.abs((timestamp2 - timestamp1) / oneDay);
   };
 
-  const handleFilterDateFromChange = (e: { target: { value: SetStateAction<string> } }) => {
-    setFilterDateFrom(e.target.value);
-  };
-
-  const handleFilterDateToChange = (e: { target: { value: SetStateAction<string> } }) => {
-    setFilterDateTo(e.target.value);
+  const handleFilterDateChange = (e: { target: { value: SetStateAction<string> } }) => {
+    const value = e.target.value.toString();
+    setFilterDate(value);
+    const filterDate = new Date(value);
+    const filter = data.filter((item) => {
+      const dateStart = new Date(item.startDate);
+      const dateEnd = new Date(item.endDate);
+      return filterDate >= dateStart && filterDate <= dateEnd;
+    });
+    setFilterData(filter);
   };
 
   const handleFilterStatusChange = (e: { target: { value: SetStateAction<string> } }) => {
-    setFilterStatus(e.target.value);
+    const value = e.target.value;
+    setFilterStatus(value);
+    if (value !== '') {
+      const filter = data.filter((item) => item.status === value);
+      setFilterData(filter);
+    } else {
+      setFilterData(data);
+    }
   };
 
   const handleFilterNameChange = (e: { target: { value: SetStateAction<string> } }) => {
-    setFilterName(e.target.value);
+    const value = e.target.value.toString();
+    setFilterName(value);
+    const filter = data.filter((item) => item.employee.name.toLowerCase().includes(value.toLowerCase()));
+    setFilterData(filter);
+  };
+
+  const handleShowInfo = (id: number) => {
+    setShowInfo(true);
+    setSelectedIdx(id);
+  };
+
+  const handleFormRequest = (status: string, id: string) => {
+    fetch('api/form-request', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status, id }),
+    })
+      .then((response) => response.json())
+      .then((result) => {
+        if (result.success) {
+          setShowInfo(false);
+          toast.success(result.message);
+          setUpdateSuccess(updateSuccess + 1);
+          formContext && formContext.checkPending();
+        } else {
+          toast.error(result.message);
+        }
+      });
   };
 
   const renderFilter = () => {
     return (
       <Row className='mb-3 d-flex justify-content-end align-items-center'>
         <Col md={3}>
-          <Form.Label>Từ ngày</Form.Label>
-          <Form.Control type='date' placeholder='Filter by Date From' value={filterDateFrom} onChange={handleFilterDateFromChange} />
+          <Form.Label>Ngày nghỉ</Form.Label>
+          <Form.Control type='date' placeholder='Filter by Date From' value={filterDate} onChange={handleFilterDateChange} />
         </Col>
-        <Col md={3}>
-          <Form.Label>Đến ngày</Form.Label>
-          <Form.Control type='date' placeholder='Filter by Date To' value={filterDateTo} onChange={handleFilterDateToChange} />
-        </Col>
+
         <Col md={3}>
           <Form.Label>Trạng thái</Form.Label>
           <Form.Control as='select' value={filterStatus} onChange={handleFilterStatusChange}>
-            <option value=''>Choose one</option>
-            <option value='Present'>Present</option>
-            <option value='Absent'>Absent</option>
+            <option value=''>ALL</option>
+            <option value='PENDING'>PENDING</option>
+            <option value='ACCEPTED'>ACCEPTED</option>
+            <option value='DENIED'>DENIED</option>
           </Form.Control>
         </Col>
         <Col md={3}>
@@ -76,9 +131,92 @@ const FormRequest = () => {
     );
   };
 
+  const renderOffCanvas = () => {
+    const handleClose = () => {
+      setSelectedIdx(-1);
+      setShowInfo(false);
+    };
+    const selectForm = filterData[selectedIdx];
+    return (
+      <Offcanvas show={showInfo} onHide={handleClose} placement='end'>
+        <Offcanvas.Header closeButton>
+          <Offcanvas.Title>Phê duyệt lịch nghỉ</Offcanvas.Title>
+        </Offcanvas.Header>
+        <Offcanvas.Body className='d-flex flex-column justify-content-between'>
+          <Container className='d-flex flex-column gap-5'>
+            <Container className='border rounded p-3'>
+              <h5>Thông tin nhân viên</h5>
+              <div className='ms-3'>
+                <span className='fw-bold'>Tên: </span>
+                {selectForm.employee.name}
+              </div>
+              <div className='ms-3'>
+                <span className='fw-bold'>Email: </span>
+                {selectForm.employee.email}
+              </div>
+            </Container>
+
+            <Container className='border rounded p-3'>
+              <h5>Thời gian nghỉ</h5>
+              <div className='ms-3'>
+                <span className='fw-bold'>Ngày bắt đầu: </span>
+                {new Date(selectForm.startDate).toLocaleDateString()}
+              </div>
+              <div className='ms-3'>
+                <span className='fw-bold'>Ngày kết thúc: </span>
+                {new Date(selectForm.endDate).toLocaleDateString()}
+              </div>
+              <div className='ms-3'>
+                <span className='fw-bold'>Thời gian nghỉ: </span>
+                {countDate(selectForm.startDate, selectForm.endDate)}
+              </div>
+            </Container>
+
+            <Container className='border rounded p-3'>
+              <h5>Thông tin liên quan</h5>
+              <div className='ms-3'>
+                <span className='fw-bold'>Lý do nghỉ: </span>
+                {selectForm.reason}
+              </div>
+              <div className='ms-3'>
+                <span className='fw-bold'>Tổng thời gian đã nghỉ: </span>
+                {data.filter((item) => item.employee._id === selectForm.employee._id && item.status === 'ACCEPTED').length}
+              </div>
+              <div className='ms-3'>
+                <span className='fw-bold'>Số ngày phép còn lại: </span>
+                {10 - data.filter((item) => item.employee._id === selectForm.employee._id && item.status === 'ACCEPTED').length}
+              </div>
+            </Container>
+
+            <Container className='text-end'>
+              <div>
+                <span className='text-primary fs-5'>
+                  Tình trạng: <span className='text-danger fst-italic'>{10 - countDate(selectForm.startDate, selectForm.endDate) >= 0 ? 'Có thể nghỉ' : 'Quá ngày phép'}</span>
+                </span>
+              </div>
+
+              <div>
+                <span className='text-dark fw-bold'>Số ngày nghỉ còn lại (nếu được duyệt): {10 - countDate(selectForm.startDate, selectForm.endDate)}</span>
+              </div>
+            </Container>
+          </Container>
+
+          <Container className='d-flex gap-4 my-5'>
+            <Button className='w-50' variant='success' onClick={() => handleFormRequest('ACCEPTED', selectForm._id)}>
+              Chấp nhận
+            </Button>
+            <Button className='w-50' variant='danger' onClick={() => handleFormRequest('DENIED', selectForm._id)}>
+              Từ chối
+            </Button>
+          </Container>
+        </Offcanvas.Body>
+      </Offcanvas>
+    );
+  };
+
   const renderTable = () => {
     return (
-      <Table>
+      <Table className='align-middle'>
         <thead>
           <tr>
             <th>#</th>
@@ -92,17 +230,23 @@ const FormRequest = () => {
           </tr>
         </thead>
         <tbody>
-          {data.length > 0 ? (
-            data.map((form, idx) => (
+          {filterData.length > 0 ? (
+            filterData.map((form, idx) => (
               <tr key={idx}>
                 <td>{idx + 1}</td>
                 <td>{form.employee.name}</td>
                 <td>{new Date(form.startDate).toLocaleDateString()}</td>
                 <td>{new Date(form.endDate).toLocaleDateString()}</td>
                 <td>{countDate(form.startDate, form.endDate)}</td>
-                <td>{form.status}</td>
+                <td>
+                  <Badge bg={badgeColors[form.status as keyof typeof badgeColors]}>{form.status}</Badge>
+                </td>
                 <td>{form.reason}</td>
-                <td></td>
+                <td>
+                  <Button variant='info' onClick={() => handleShowInfo(idx)}>
+                    Action <FaArrowAltCircleRight />
+                  </Button>
+                </td>
               </tr>
             ))
           ) : (
@@ -121,6 +265,8 @@ const FormRequest = () => {
       {renderFilter()}
 
       {isLoading ? <TableLoading columns={tableColumns} /> : renderTable()}
+
+      {selectedIdx >= 0 && renderOffCanvas()}
     </Container>
   );
 };

@@ -1,14 +1,15 @@
 'use client';
-// import { login } from '@/api';
+import { checkAdmin } from '@/helper/auth';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { SetStateAction, useState } from 'react';
-import { Alert, Button, Col, Container, Form, Row } from 'react-bootstrap';
+import { Alert, Button, Col, Container, Form, Row, Spinner } from 'react-bootstrap';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const router = useRouter();
 
@@ -23,12 +24,25 @@ const Login = () => {
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
 
-    // const res = await login({ email, password });
-    // if (res.success) {
-    //   router.push('/');
-    // } else {
-    //   setError(res.message);
-    // }
+    setLoading(true);
+
+    fetch('api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    })
+      .then((response) => response.json())
+      .then((result) => {
+        if (result.success) {
+          router.push('/');
+        } else {
+          setError(result.message);
+          setLoading(false);
+        }
+      });
   };
 
   return (
@@ -56,9 +70,16 @@ const Login = () => {
               <a href='!#'>Forgot password?</a>
             </div>
 
-            <Button className='mb-4 w-100' variant='primary' size='lg' type='submit'>
-              Sign in
-            </Button>
+            {loading ? (
+              <Button className='mb-4 w-100' variant='primary' disabled>
+                <Spinner as='span' animation='grow' size='sm' role='status' aria-hidden='true' />
+                Loading...
+              </Button>
+            ) : (
+              <Button className='mb-4 w-100' variant='primary' size='lg' type='submit'>
+                Sign in
+              </Button>
+            )}
           </Form>
         </Col>
       </Row>
