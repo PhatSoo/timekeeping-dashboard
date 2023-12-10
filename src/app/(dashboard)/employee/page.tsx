@@ -86,10 +86,6 @@ const Employee = () => {
     });
   };
 
-  const handleSubmit = (e: { preventDefault: () => void }) => {
-    e.preventDefault();
-  };
-
   const handleSelectMultiple = () => {
     if (selectMultiple) {
       setSelectAll(false);

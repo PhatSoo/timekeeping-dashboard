@@ -10,8 +10,6 @@ const InfoBottom = () => {
   const [userInfo, setUserInfo] = useState<IEmployee | null>();
   const [loading, setLoading] = useState(false);
 
-  const avatarLink = `${process.env.API_SERVER}/${process.env.AVATAR_STORE}/${userInfo?.avatar}`;
-
   // GET CURRENT LOGIN INFO
   useEffect(() => {
     fetch('api/auth/me')
@@ -41,7 +39,7 @@ const InfoBottom = () => {
         <Container className='d-flex justify-content-between px-4'>
           <div className='d-flex justify-content-center align-items-center'>
             <div className='border rounded-circle'>
-              <Image alt='avatar' src={userInfo?.avatar ? avatarLink : avatar_icon} width='50' height='50' />
+              <Image alt='avatar' src={userInfo?.avatar ? userInfo.avatar : avatar_icon} width='50' height='50' />
             </div>
           </div>
           <div className='px-2 w-100 text-center'>

@@ -12,8 +12,13 @@ const nextConfig = {
         protocol: 'http',
         hostname: 'localhost',
       },
+      {
+        protocol: 'http',
+        hostname: 'res.cloudinary.com',
+      },
     ],
   },
+  reactStrictMode: false,
 };
 
 module.exports = nextConfig;

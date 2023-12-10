@@ -15,8 +15,7 @@ interface IProp {
 
 const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChangeFormData }: IProp) => {
   const [roleList, setRoleList] = useState<IRole[]>([]);
-  const avatarLink = `${process.env.API_SERVER}/${process.env.AVATAR_STORE}/${formData.avatar}`;
-  const [srcValue, setSrcValue] = useState(formData.avatar ? avatarLink : avatarDefault);
+  const [srcValue, setSrcValue] = useState(formData.avatar ? formData.avatar : avatarDefault);
   const [isSelectedFile, setIsSelectedFile] = useState<File>();
   const [resetLoading, setResetLoading] = useState(false);
   const isAddNew = formData._id === '';
@@ -75,36 +74,43 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
   };
 
   const handleFileChange = (event: { target: any; preventDefault: () => void }) => {
-    if (event.target.files && event.target.files[0]) {
-      setSrcValue(URL.createObjectURL(event.target.files[0]));
-      setIsSelectedFile(event.target.files[0]);
+    const file = event.target.files[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast.error('File không phải ảnh!');
+      } else if (file.size > 10485760) {
+        toast.error('File ảnh quá lớn!');
+      } else {
+        setSrcValue(URL.createObjectURL(event.target.files[0]));
+        setIsSelectedFile(event.target.files[0]);
+      }
     }
   };
 
   const handleChangeImage = (event: { preventDefault: () => void }) => {
     event.preventDefault();
 
-    const data = new FormData();
-
-    data.append('_id', formData._id);
-
     if (isSelectedFile) {
+      const data = new FormData();
+      data.append('_id', formData._id);
       data.append('avatar', isSelectedFile);
-    }
 
-    fetch('api/upload', {
-      method: 'POST',
-      body: data,
-    })
-      .then((response) => response.json())
-      .then((result) => {
-        if (result.success) {
-          toast.success(result.message);
-          handleCloseModal();
-        } else {
-          toast.error(result.message);
-        }
-      });
+      fetch('api/upload', {
+        method: 'POST',
+        body: data,
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          if (result.success) {
+            toast.success(result.message);
+            handleCloseModal();
+          } else {
+            toast.error(result.message);
+          }
+        });
+    } else {
+      toast.error('Bạn chưa chọn ảnh ');
+    }
   };
 
   const handleResetPassword = (event: { preventDefault: () => void }) => {
@@ -196,7 +202,7 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
                     </Container>
                   )}
                 </Form.Group>
-                <Button onClick={handleResetPassword} className='m-auto w-50 mt-3' variant='primary' type='submit'>
+                <Button className='m-auto w-50 mt-3' variant='primary' type='submit'>
                   {isAddNew ? 'Thêm mới' : 'Cập nhật'}
                 </Button>
               </Container>
@@ -209,7 +215,7 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
                 <Container className='d-flex flex-column gap-2 justify-content-center align-items-center'>
                   <Image src={srcValue} alt='Ảnh' width={300} height={400} />
 
-                  <Form.Control required type='file' name='avatar' onChange={handleFileChange} />
+                  <Form.Control required type='file' accept='image/jpeg, image/png' name='avatar' onChange={handleFileChange} />
                 </Container>
                 <Button className='m-auto w-50 mt-3' variant='warning' type='submit'>
                   Thay đổi ảnh

@@ -9,7 +9,7 @@ const Sidebar = () => {
         <GiTopHat size={40} />
         <div>LTP Company Dashboard</div>
       </div>
-      <div className='h-100 p-2 flex-grow-1'>
+      <div className='h-100 p-2 flex-grow-1 overflow-auto'>
         <MenuItem />
       </div>
       <div className='py-2 d-flex flex-column gap-2 border-top border-2 border-gray-300'>

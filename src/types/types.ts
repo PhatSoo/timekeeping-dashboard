@@ -24,15 +24,6 @@ export interface IShift {
   endTime: string;
 }
 
-export interface IFulltime {
-  _id: string;
-  employeeId: string;
-  checkInTime: Date;
-  checkOutTime: Date;
-  workDate: Date;
-  status: boolean;
-}
-
 export interface ISchedule {
   _id: string;
   employee: {
@@ -47,17 +38,31 @@ export interface ISchedule {
   ];
 }
 
-export interface IPartTime {
+export interface IAttendance {
   _id: string;
-  employee: string;
+  employee: {
+    _id: string;
+    name: string;
+    avatar: string;
+  };
   workDate: Date;
   workShift: {
     _id: string;
     shiftName: string;
+    startTime: string;
+    endTime: string;
+  } | null;
+  checkIn: {
+    time: Date;
+    image: string;
+    score: Number;
   };
-  checkInTime: Date;
-  checkOutTime: Date;
-  status: ['NULL', 'WORKING', 'DONE'];
+  checkOut: {
+    time: Date;
+    image: string;
+    score: Number;
+  };
+  status: 'NULL' | 'ON LEAVE' | 'WORKING' | 'DONE';
 }
 
 export interface IFormRequest {
@@ -75,4 +80,17 @@ export interface IFormRequest {
   };
   reason: string;
   status: string;
+}
+
+export interface IStatistic {
+  attendances: IAttendance[];
+  employee: IEmployee;
+}
+
+export interface ISettings {
+  workDate: string[];
+  workHours: {
+    startTime: string;
+    endTime: string;
+  };
 }

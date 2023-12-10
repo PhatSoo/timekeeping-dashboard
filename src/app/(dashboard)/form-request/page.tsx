@@ -16,7 +16,7 @@ const badgeColors = {
 
 const FormRequest = () => {
   const [filterDate, setFilterDate] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+  const [filterStatus, setFilterStatus] = useState('PENDING');
   const [filterName, setFilterName] = useState('');
   const [data, setData] = useState<IFormRequest[]>([]);
   const [filterData, setFilterData] = useState<IFormRequest[]>([]);
@@ -24,6 +24,7 @@ const FormRequest = () => {
   const [showInfo, setShowInfo] = useState(false);
   const [selectedIdx, setSelectedIdx] = useState<number>(-1);
   const [updateSuccess, setUpdateSuccess] = useState(0);
+  const [filter, setFilter] = useState(false);
 
   const formContext = useContext(FormRequestContext);
 
@@ -36,53 +37,89 @@ const FormRequest = () => {
   }, [updateSuccess]);
 
   useEffect(() => {
-    setFilterData(data);
+    const filter = data.filter((item) => item.status === filterStatus);
+    setFilterData(filter);
+    setFilter(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
   const countDate = (time1: Date, time2: Date) => {
     const date1 = new Date(time1);
     const date2 = new Date(time2);
 
-    const timestamp1 = date1.getTime();
-    const timestamp2 = date2.getTime();
+    // Đặt thời gian của cả hai ngày về 0:00:00
+    date1.setHours(0, 0, 0, 0);
+    date2.setHours(0, 0, 0, 0);
 
-    const oneDay = 24 * 60 * 60 * 1000; // Số mili giây trong một ngày
-    return Math.abs((timestamp2 - timestamp1) / oneDay);
-  };
+    let dayCount = 0;
 
-  const handleFilterDateChange = (e: { target: { value: SetStateAction<string> } }) => {
-    const value = e.target.value.toString();
-    setFilterDate(value);
-    const filterDate = new Date(value);
-    const filter = data.filter((item) => {
-      const dateStart = new Date(item.startDate);
-      const dateEnd = new Date(item.endDate);
-      return filterDate >= dateStart && filterDate <= dateEnd;
-    });
-    setFilterData(filter);
-  };
-
-  const handleFilterStatusChange = (e: { target: { value: SetStateAction<string> } }) => {
-    const value = e.target.value;
-    setFilterStatus(value);
-    if (value !== '') {
-      const filter = data.filter((item) => item.status === value);
-      setFilterData(filter);
+    if (date1.toDateString() === date2.toDateString()) {
+      dayCount = 1;
     } else {
-      setFilterData(data);
+      const timestamp1 = date1.getTime();
+      const timestamp2 = date2.getTime();
+
+      const oneDay = 24 * 60 * 60 * 1000; // Số mili giây trong một ngày
+      dayCount = Math.abs((timestamp2 - timestamp1) / oneDay) + 1;
     }
+
+    return dayCount;
   };
 
-  const handleFilterNameChange = (e: { target: { value: SetStateAction<string> } }) => {
-    const value = e.target.value.toString();
-    setFilterName(value);
-    const filter = data.filter((item) => item.employee.name.toLowerCase().includes(value.toLowerCase()));
-    setFilterData(filter);
+  const handleFilterChange = (e: { target: { value: string; name: string } }) => {
+    const { value, name } = e.target;
+
+    let newFilterStatus = filterStatus;
+    let newFilterName = filterName;
+    let newFilterDate = filterDate;
+
+    if (name === 'status') {
+      newFilterStatus = value;
+      setFilterStatus(value);
+    } else if (name === 'name') {
+      newFilterName = value;
+      setFilterName(value);
+    } else if (name === 'date') {
+      newFilterDate = value;
+      setFilterDate(value);
+    }
+
+    let filteredData = data;
+
+    if (newFilterStatus !== '') {
+      filteredData = filteredData.filter((item) => item.status === newFilterStatus);
+    }
+
+    if (newFilterName !== '') {
+      filteredData = filteredData.filter((item) => item.employee.name.toLowerCase().includes(newFilterName.toLowerCase()));
+    }
+
+    if (newFilterDate !== '') {
+      const date = new Date(newFilterDate);
+      filteredData = filteredData.filter((item) => {
+        const dateStart = new Date(item.startDate);
+        dateStart.setHours(0, 0, 0);
+        const dateEnd = new Date(item.endDate);
+        dateEnd.setHours(23, 59, 59);
+        return date >= dateStart && date <= dateEnd;
+      });
+    }
+
+    setFilterData(filteredData);
+    setFilter(true);
   };
 
   const handleShowInfo = (id: number) => {
     setShowInfo(true);
     setSelectedIdx(id);
+  };
+
+  const handleClearFilter = () => {
+    setFilter(false);
+    setFilterStatus('');
+    setFilterDate('');
+    setFilterName('');
+    setFilterData(data);
   };
 
   const handleFormRequest = (status: string, id: string) => {
@@ -99,6 +136,7 @@ const FormRequest = () => {
           setShowInfo(false);
           toast.success(result.message);
           setUpdateSuccess(updateSuccess + 1);
+          setSelectedIdx(-1);
           formContext && formContext.checkPending();
         } else {
           toast.error(result.message);
@@ -110,13 +148,20 @@ const FormRequest = () => {
     return (
       <Row className='mb-3 d-flex justify-content-end align-items-center'>
         <Col md={3}>
+          {filter && (
+            <Button variant='dark' onClick={handleClearFilter}>
+              Clear
+            </Button>
+          )}
+        </Col>
+        <Col md={3}>
           <Form.Label>Ngày nghỉ</Form.Label>
-          <Form.Control type='date' placeholder='Filter by Date From' value={filterDate} onChange={handleFilterDateChange} />
+          <Form.Control type='date' placeholder='Filter by Date From' name='date' value={filterDate} onChange={handleFilterChange} />
         </Col>
 
         <Col md={3}>
           <Form.Label>Trạng thái</Form.Label>
-          <Form.Control as='select' value={filterStatus} onChange={handleFilterStatusChange}>
+          <Form.Control as='select' name='status' value={filterStatus} onChange={handleFilterChange}>
             <option value=''>ALL</option>
             <option value='PENDING'>PENDING</option>
             <option value='ACCEPTED'>ACCEPTED</option>
@@ -125,7 +170,7 @@ const FormRequest = () => {
         </Col>
         <Col md={3}>
           <Form.Label>Tên nhân viên</Form.Label>
-          <Form.Control type='text' placeholder='Input name here...' value={filterName} onChange={handleFilterNameChange} />
+          <Form.Control type='text' placeholder='Input name here...' name='name' value={filterName} onChange={handleFilterChange} />
         </Col>
       </Row>
     );
@@ -137,6 +182,11 @@ const FormRequest = () => {
       setShowInfo(false);
     };
     const selectForm = filterData[selectedIdx];
+
+    const remainingRequest = () => {
+      return 10 - data.filter((item) => item.employee._id === selectForm.employee._id && item.status === 'ACCEPTED').length;
+    };
+
     return (
       <Offcanvas show={showInfo} onHide={handleClose} placement='end'>
         <Offcanvas.Header closeButton>
@@ -191,23 +241,44 @@ const FormRequest = () => {
             <Container className='text-end'>
               <div>
                 <span className='text-primary fs-5'>
-                  Tình trạng: <span className='text-danger fst-italic'>{10 - countDate(selectForm.startDate, selectForm.endDate) >= 0 ? 'Có thể nghỉ' : 'Quá ngày phép'}</span>
+                  Tình trạng: <span className='text-danger fst-italic'>{remainingRequest() >= 0 ? 'Có thể nghỉ' : 'Quá ngày phép'}</span>
                 </span>
               </div>
 
               <div>
-                <span className='text-dark fw-bold'>Số ngày nghỉ còn lại (nếu được duyệt): {10 - countDate(selectForm.startDate, selectForm.endDate)}</span>
+                <span className='text-dark fw-bold'>Số ngày nghỉ còn lại (nếu được duyệt): {remainingRequest() - countDate(selectForm.startDate, selectForm.endDate)}</span>
               </div>
             </Container>
           </Container>
 
-          <Container className='d-flex gap-4 my-5'>
-            <Button className='w-50' variant='success' onClick={() => handleFormRequest('ACCEPTED', selectForm._id)}>
-              Chấp nhận
-            </Button>
-            <Button className='w-50' variant='danger' onClick={() => handleFormRequest('DENIED', selectForm._id)}>
-              Từ chối
-            </Button>
+          <Container className='d-flex flex-column gap-4 my-5'>
+            {selectForm.status && (
+              <Container className='text-center p-2 rounded' style={{ backgroundColor: 'ButtonHighlight' }}>
+                <span className='fw-bold fs-5'>
+                  Trạng thái:{' '}
+                  <span className='fst-italic' style={selectForm.status === 'ACCEPTED' ? { color: 'green' } : selectForm.status === 'DENIED' ? { color: 'red' } : { color: 'yellow' }}>
+                    {selectForm.status}
+                  </span>
+                </span>
+              </Container>
+            )}
+
+            <Container className='d-flex gap-3'>
+              {new Date(selectForm.startDate) < new Date() ? (
+                <Button className='w-100' variant='info' onClick={handleClose}>
+                  Đóng
+                </Button>
+              ) : (
+                <>
+                  <Button className='w-50' variant='success' onClick={() => handleFormRequest('ACCEPTED', selectForm._id)}>
+                    Chấp nhận
+                  </Button>
+                  <Button className='w-50' variant='danger' onClick={() => handleFormRequest('DENIED', selectForm._id)}>
+                    Từ chối
+                  </Button>
+                </>
+              )}
+            </Container>
           </Container>
         </Offcanvas.Body>
       </Offcanvas>

@@ -3,6 +3,7 @@ import { fetchWithAuth } from '../config';
 // Get all Form requests
 export const GET = async (req: Request) => {
   const { searchParams } = new URL(req.url);
+
   if (searchParams.has('pending')) {
     return await fetchWithAuth(`${process.env.API_SERVER}/api/form-request/pending`)
       .then((response) => response.json())

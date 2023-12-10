@@ -2,8 +2,9 @@
 import { FormRequestContext } from '@/context/FormRequest';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState, useContext } from 'react';
-import { FaHome, FaUserCheck, FaChartBar, FaBell, FaHourglassHalf, FaCalendarAlt, FaUsers, FaClipboard, FaUserTag } from 'react-icons/fa';
+import { useContext } from 'react';
+import { FaHome, FaUserCheck, FaChartBar, FaBell, FaHourglassHalf, FaCalendarAlt, FaUsers, FaClipboard, FaUserTag, FaRegSun } from 'react-icons/fa';
+
 const data = [
   { name: 'Dashboard', icon: <FaHome />, link: '/', notify: false },
   { name: 'Role', icon: <FaUserTag />, link: '/role', notify: false },
@@ -13,6 +14,7 @@ const data = [
   { name: 'Part-time Schedule', icon: <FaCalendarAlt />, link: '/schedule', notify: false },
   { name: 'Form Requests', icon: <FaClipboard />, link: '/form-request', notify: true },
   { name: 'Statistic', icon: <FaChartBar />, link: '/statistic', notify: false },
+  // { name: 'Settings', icon: <FaRegSun />, link: '/settings', notify: false },
 ];
 
 const active: string = 'bg-secondary text-white fw-bold';
