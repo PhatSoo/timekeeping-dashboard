@@ -18,6 +18,8 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
   const [srcValue, setSrcValue] = useState(formData.avatar ? formData.avatar : avatarDefault);
   const [isSelectedFile, setIsSelectedFile] = useState<File>();
   const [resetLoading, setResetLoading] = useState(false);
+  const [checkImage, setCheckImage] = useState<{ pass: boolean; message: string } | null>();
+  const [isLoading, setLoading] = useState(false);
   const isAddNew = formData._id === '';
 
   useEffect(() => {
@@ -74,6 +76,8 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
   };
 
   const handleFileChange = (event: { target: any; preventDefault: () => void }) => {
+    setCheckImage(null);
+
     const file = event.target.files[0];
     if (file) {
       if (!file.type.startsWith('image/')) {
@@ -134,6 +138,31 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
       .finally(() => setResetLoading(false));
   };
 
+  const checkImageQuality = () => {
+    setLoading(true);
+    setCheckImage(null);
+    if (isSelectedFile) {
+      const data = new FormData();
+      data.append('_id', formData._id);
+      data.append('avatar', isSelectedFile);
+      fetch('api/upload?checkImage', {
+        method: 'POST',
+        body: data,
+      })
+        .then((r) => r.json())
+        .then((res) => {
+          if (res.success) {
+            setCheckImage({ pass: true, message: 'Ảnh hợp lệ!' });
+          } else {
+            setCheckImage({ pass: false, message: 'Ảnh không hợp lệ!' });
+          }
+        })
+        .finally(() => setLoading(false));
+    } else {
+      toast.error('Bạn chưa chọn ảnh!');
+    }
+  };
+
   return (
     <Modal show={showModal} onHide={handleCloseModal} centered {...(!isAddNew && { size: 'lg' })}>
       <Modal.Header closeButton>
@@ -165,6 +194,10 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
                 <Form.Group className='mb-3'>
                   <Form.Label>CCCD</Form.Label>
                   <Form.Control name='CCCD' type='text' max={12} pattern='\d{12}' required value={formData.CCCD} onChange={handleChangeFormData} placeholder='Nhập số căn cước công dân...' />
+                </Form.Group>
+                <Form.Group className='mb-3'>
+                  <Form.Label>SDT</Form.Label>
+                  <Form.Control name='SDT' type='text' max={10} pattern='\d{10}' required value={formData.phone} onChange={handleChangeFormData} placeholder='Nhập số điện thoại...' />
                 </Form.Group>
                 <Form.Group className='mb-3'>
                   <Form.Label>Giới tính</Form.Label>
@@ -210,16 +243,28 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
           </Col>
 
           {!isAddNew && (
-            <Col>
+            <Col className='border-start border-3'>
               <Form encType='multipart/form-data' onSubmit={handleChangeImage} className='d-flex flex-column justify-content-center align-items-center gap-3'>
                 <Container className='d-flex flex-column gap-2 justify-content-center align-items-center'>
-                  <Image src={srcValue} alt='Ảnh' width={300} height={400} />
+                  <Image src={srcValue} alt='Ảnh' width={350} height={450} />
 
                   <Form.Control required type='file' accept='image/jpeg, image/png' name='avatar' onChange={handleFileChange} />
                 </Container>
-                <Button className='m-auto w-50 mt-3' variant='warning' type='submit'>
-                  Thay đổi ảnh
-                </Button>
+                {isSelectedFile && (
+                  <Button onClick={!isLoading ? checkImageQuality : () => {}} variant='light'>
+                    {isLoading ? 'Loading…' : 'Kiểm tra chất lượng ảnh'}
+                  </Button>
+                )}
+                {checkImage && (
+                  <>
+                    <p className={`${checkImage.pass ? 'text-success' : 'text-danger'}`}>{checkImage.message}</p>
+                    {checkImage.pass && (
+                      <Button className='m-auto w-50 mt-3' variant='warning' type='submit'>
+                        Thay đổi ảnh
+                      </Button>
+                    )}
+                  </>
+                )}
               </Form>
             </Col>
           )}

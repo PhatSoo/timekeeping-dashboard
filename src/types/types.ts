@@ -3,6 +3,7 @@ export interface IEmployee {
   name: string;
   email: string;
   CCCD: string;
+  phone: string;
   isPartTime: boolean;
   sex: boolean;
   avatar: string;

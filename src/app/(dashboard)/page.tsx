@@ -5,7 +5,7 @@ import CardLoading from '@/components/Component.CardLoading';
 import { Accordion, Button, Container, FloatingLabel, Form } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 
-const daysOfWeek = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
+const daysOfWeek = [{ 1: 'Thứ 2' }, { 2: 'Thứ 3' }, { 3: 'Thứ 4' }, { 4: 'Thứ 5' }, { 5: 'Thứ 6' }, { 6: 'Thứ 7' }, { 0: 'Chủ nhật' }];
 
 const App = () => {
   const [data, setData] = useState<{ title: string; total: number; link: string }[]>([]);
@@ -30,12 +30,8 @@ const App = () => {
           { title: 'Roles', total: roleResult.total, link: 'role' },
         ]);
 
-        console.log('====================================');
-        console.log(settingsResult);
-        console.log('====================================');
-
         if (settingsResult.success) {
-          setCheckedDays(settingsResult.data.workDays);
+          setCheckedDays(settingsResult.data.workDays || []);
           setStartTime(settingsResult.data.workHours.startTime);
           setEndTime(settingsResult.data.workHours.endTime);
         }
@@ -54,7 +50,7 @@ const App = () => {
 
   const formattedDate = date.toLocaleDateString('vi-VN', options as Intl.DateTimeFormatOptions);
 
-  const handleCheckChange = (day: string) => {
+  const handleCheckChange = (day: any) => {
     if (checkedDays.includes(day)) {
       setCheckedDays(checkedDays.filter((d) => d !== day));
     } else {
@@ -113,9 +109,12 @@ const App = () => {
             <Accordion.Body>
               <Form onSubmit={handleSubmitWorkDays} className='d-flex align-items-center'>
                 <Container>
-                  {daysOfWeek.map((day, index) => (
-                    <Form.Check inline key={index} type='checkbox' label={day} checked={checkedDays.includes(day)} onChange={() => handleCheckChange(day)} />
-                  ))}
+                  {daysOfWeek.map((day, index) => {
+                    const dayOfWeek = Object.values(day)[0];
+                    const dayKeys = Object.keys(day)[0];
+
+                    return <Form.Check inline key={index} type='checkbox' label={dayOfWeek} checked={checkedDays.includes(dayKeys)} onChange={() => handleCheckChange(dayKeys)} />;
+                  })}
                 </Container>
                 <Button variant='info' type='submit'>
                   Submit

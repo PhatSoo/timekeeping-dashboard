@@ -38,7 +38,7 @@ const InfoBottom = () => {
       {loading ? (
         <Container className='d-flex justify-content-between px-4'>
           <div className='d-flex justify-content-center align-items-center'>
-            <div className='border rounded-circle'>
+            <div>
               <Image alt='avatar' src={userInfo?.avatar ? userInfo.avatar : avatar_icon} width='50' height='50' />
             </div>
           </div>

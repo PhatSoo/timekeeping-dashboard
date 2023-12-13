@@ -26,7 +26,12 @@ const MenuItem = () => {
 
   const renderItem = (item: { name: string; icon: JSX.Element; link: string; notify: boolean }, idx: number) => {
     return (
-      <Link href={item.link} key={idx} className={`d-flex position-relative align-items-center gap-3 border p-2 rounded hover text-decoration-none ${pathname === item.link ? active : inActive}`}>
+      <Link
+        style={{ width: '99%' }}
+        href={item.link}
+        key={idx}
+        className={`d-flex position-relative align-items-center gap-3 border p-2 rounded hover text-decoration-none ${pathname === item.link ? active : inActive}`}
+      >
         {item.icon}
         {item.name}
         {item.notify && formContext && formContext?.pending > 0 && (

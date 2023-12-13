@@ -2,7 +2,7 @@
 
 import { SetStateAction, useEffect, useState } from 'react';
 import { Col, Container, Form, Row, Tab, Table, Tabs } from 'react-bootstrap';
-import { IAttendance, IEmployee } from '@/types/types';
+import { IAttendance, IEmployee, ISettings } from '@/types/types';
 import TableLoading from '@/components/Component.TableLoading';
 import ViewDetailButton from '@/components/Attendance.ViewDetail';
 import AttendanceItem from '@/components/Attendance.Percent';
@@ -18,6 +18,13 @@ const Attendance = () => {
   const [filterStatus, setFilterStatus] = useState('');
   const [filterName, setFilterName] = useState('');
   const [attendanceData, setAttendanceData] = useState<IAttendance[]>([]);
+  const [settings, setSettings] = useState<ISettings>({
+    workDate: [],
+    workHours: {
+      startTime: '',
+      endTime: '',
+    },
+  });
 
   const [total, setTotal] = useState(0);
   const [countCheck, setCountCheck] = useState(0);
@@ -29,10 +36,15 @@ const Attendance = () => {
   useEffect(() => {
     setIsLoading(true);
 
-    Promise.all([fetch('api/employee?isPartTime=0').then((response) => response.json()), fetch('api/employee?isPartTime=1').then((response) => response.json())])
-      .then(([fulltimeResult, parttimeResult]) => {
+    Promise.all([
+      fetch('api/employee?isPartTime=0').then((response) => response.json()),
+      fetch('api/employee?isPartTime=1').then((response) => response.json()),
+      fetch('api/settings').then((response) => response.json()),
+    ])
+      .then(([fulltimeResult, parttimeResult, settingsResult]) => {
         setFulltimeEmployee(fulltimeResult.data);
         setParttimeEmployee(parttimeResult.data);
+        setSettings(settingsResult.data);
       })
       .catch((error) => console.error(error))
       .finally(() => setIsLoading(false));
@@ -60,8 +72,8 @@ const Attendance = () => {
     let checkInTime = new Date(attendance.checkIn.time);
     let checkOutTime = new Date(attendance.checkOut.time);
 
-    let startTime = attendance.workShift ? attendance.workShift.startTime : '08:00';
-    let endTime = attendance.workShift ? attendance.workShift.endTime : '17:00';
+    let startTime = attendance.workShift ? attendance.workShift.startTime : settings.workHours.startTime;
+    let endTime = attendance.workShift ? attendance.workShift.endTime : settings.workHours.endTime;
 
     const startTimeDate = new Date(checkInTime.toDateString() + ' ' + startTime);
     const endTimeDate = new Date(checkInTime.toDateString() + ' ' + endTime);

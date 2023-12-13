@@ -95,18 +95,26 @@ const Schedule = () => {
 
   const dayNames = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
 
+  console.log('====================================');
+  console.log(holidayValue?.toString().split(','));
+  console.log('====================================');
+
   const handleSchedule = (e: { preventDefault: () => void }) => {
     e.preventDefault();
     // Kiểm tra xem đến giờ được phép xếp ca chưa ?
     const now = new Date();
 
     const checkTime = now.getDay() === 0 && now.getHours() >= 16 && now.getMinutes() >= 30;
+    let holiday: string[] = [];
+    if (holidayValue && holidayValue.toString()) {
+      holiday = holidayValue.toString().split(',');
+    }
 
     if (checkTime) {
       fetch('api/schedule', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data: workData, num: sPd, holidays: holidayValue?.toString().split(',') }),
+        body: JSON.stringify({ data: workData, num: sPd, holidays: holiday }),
       })
         .then((response) => response.json())
         .then((result) => {
