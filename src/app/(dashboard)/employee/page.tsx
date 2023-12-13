@@ -13,6 +13,7 @@ const nullData = {
   name: '',
   email: '',
   isPartTime: false,
+  phone: '',
   CCCD: '',
   sex: false,
   role: {
