@@ -197,7 +197,7 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
                 </Form.Group>
                 <Form.Group className='mb-3'>
                   <Form.Label>SDT</Form.Label>
-                  <Form.Control name='SDT' type='text' max={10} pattern='\d{10}' required value={formData.phone} onChange={handleChangeFormData} placeholder='Nhập số điện thoại...' />
+                  <Form.Control name='phone' type='text' max={10} pattern='\d{10}' required value={formData.phone} onChange={handleChangeFormData} placeholder='Nhập số điện thoại...' />
                 </Form.Group>
                 <Form.Group className='mb-3'>
                   <Form.Label>Giới tính</Form.Label>
