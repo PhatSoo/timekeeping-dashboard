@@ -1,4 +1,11 @@
 import { cookies } from 'next/headers';
+import { fetchWithAuth } from '../config';
+
+export const GET = async (req: Request) => {
+  return fetchWithAuth(`${process.env.API_SERVER2}/api/upload-attendance`)
+    .then((response) => response.json())
+    .then((result) => Response.json(result));
+};
 
 // Create a new employee
 export const POST = async (req: Request) => {
@@ -8,7 +15,7 @@ export const POST = async (req: Request) => {
   if (searchParams.has('checkImage')) {
     // Kiểm tra chất lượng ảnh
 
-    return fetch(`${process.env.API_SERVER}/api/upload/check-avatar`, {
+    return fetch(`${process.env.API_SERVER2}/api/upload/check-avatar`, {
       method: 'POST',
       headers: { Authorization: getCookiesToken() },
       body: data,
@@ -18,13 +25,18 @@ export const POST = async (req: Request) => {
   } else {
     // Thêm ảnh
 
-    return fetch(`${process.env.API_SERVER}/api/upload/avatar`, {
+    const res = await fetch(`${process.env.API_SERVER}/api/upload/avatar`, {
       method: 'POST',
       headers: { Authorization: getCookiesToken() },
       body: data,
-    })
-      .then((response) => response.json())
-      .then((result) => Response.json(result));
+    }).then((response) => response.json());
+
+    await fetchWithAuth(`${process.env.API_SERVER2}/api/face-descriptor`, {
+      method: 'POST',
+      body: JSON.stringify({ _id: data.get('_id') }),
+    });
+
+    return Response.json(res);
   }
 };
 

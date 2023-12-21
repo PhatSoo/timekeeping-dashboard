@@ -3,42 +3,60 @@
 import { IAttendance, IStatistic } from '@/types/types';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Button, Container, Table } from 'react-bootstrap';
-import { FaCalendarCheck } from 'react-icons/fa';
+import { FaCalendarAlt, FaCalendarCheck } from 'react-icons/fa';
 import DatePicker, { DateObject } from 'react-multi-date-picker';
 import 'react-multi-date-picker/styles/layouts/mobile.css';
 import { toast } from 'react-toastify';
 import { SiMicrosoftexcel } from 'react-icons/si';
 import { useDownloadExcel } from 'react-export-table-to-excel';
 
+// const currentDate = new Date();
+// const maxDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
 const today = new Date().toISOString().split('T')[0];
 
 const currentDate = new Date();
-const maxDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
 const Statistic = () => {
   const [data, setData] = useState<IStatistic[]>([]);
-  const [date, setDate] = useState<string>(today);
-  const [dateRange, setDateRange] = useState('');
+  const [range, setRange] = useState('');
   const [notify, setNotify] = useState(false);
+  const [selectedDate, setSelectedDate] = useState([new DateObject(firstDayOfMonth), new DateObject(lastDayOfMonth)]);
+  const [selectedMonth, setSelectedMonth] = useState([new DateObject()]);
 
   const tableRef = useRef(null);
 
   const { onDownload } = useDownloadExcel({
     currentTableRef: tableRef.current,
-    filename: `TimeTracking_${new Date(date).toLocaleDateString()}`,
+    filename: `TimeTracking_${new Date(today).toLocaleDateString()}`,
     sheet: 'Thông tin chấm công',
   });
 
   useEffect(() => {
-    const current = new Date(date);
-    const startDate = new Date(current.getFullYear(), current.getMonth(), 1);
-    const endDate = new Date(current.getFullYear(), current.getMonth() + 1, 0);
-    const formattedStartDate = startDate.toLocaleDateString('vi-VN');
-    const formattedEndDate = endDate.toLocaleDateString('vi-VN');
-    setDateRange(`${formattedStartDate} - ${formattedEndDate}`);
+    const filterType = selectedDate.length > 0 ? 'date' : 'month';
+    let start, end;
+
+    if (filterType === 'date') {
+      if (selectedDate.length === 2) {
+        start = selectedDate[0].format('DD-MM-YYYY');
+        end = selectedDate[1].format('DD-MM-YYYY');
+      } else if (selectedDate.length === 1) {
+        start = end = selectedDate[0].format('DD-MM-YYYY');
+      }
+    } else {
+      if (selectedMonth.length === 2) {
+        start = selectedMonth[0].format('MM-YYYY');
+        end = selectedMonth[1].format('MM-YYYY');
+      } else if (selectedMonth.length === 1) {
+        start = end = selectedMonth[0].format('MM-YYYY');
+      }
+    }
+
+    setRange(`${start} --- ${end}`);
     setNotify(false);
 
-    fetch(`api/statistic?date=${date}`)
+    fetch(`api/statistic?from=${start}&to=${end}&filterType=${filterType}`)
       .then((r) => r.json())
       .then((res) => {
         if (res.success) {
@@ -47,7 +65,8 @@ const Statistic = () => {
           toast.error('Some thing went wrong!');
         }
       });
-  }, [date]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [range]);
 
   const calculateStats = (attendance: IAttendance[]) => {
     let totalHours = 0;
@@ -120,39 +139,61 @@ const Statistic = () => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   };
 
-  const handleDateChange = (val: DateObject) => {
-    setDate(val.format());
-  };
-
   const handleExcelClick = (e: { preventDefault: () => void }) => {
     e.preventDefault();
 
-    if (new Date(date).getMonth() === new Date().getMonth()) {
+    if (new Date(today).getMonth() === new Date().getMonth()) {
       setNotify(true);
     } else {
       onDownload();
     }
   };
 
-  const renderCalendarButton = (value: any, openCalendar: any) => {
-    return (
-      <>
-        <Button className='ms-3' variant='dark' onClick={openCalendar}>
-          <FaCalendarCheck />
-        </Button>
-      </>
-    );
-  };
-
   const renderFilterDate = () => {
+    const renderCalendarButtonDateRange = (value: any, openCalendar: any) => {
+      return (
+        <>
+          <Button className='ms-3' variant='warning' onClick={openCalendar}>
+            Chọn ngày <FaCalendarCheck />
+          </Button>
+        </>
+      );
+    };
+
+    const renderCalendarButtonMonthRange = (value: any, openCalendar: any) => {
+      return (
+        <>
+          <Button className='ms-3' variant='danger' onClick={openCalendar}>
+            Chọn tháng <FaCalendarAlt />
+          </Button>
+        </>
+      );
+    };
+
+    const handleDateChange = (date: DateObject[]) => {
+      setSelectedMonth([]);
+      setSelectedDate(date);
+      setRange(date ? date.map((d) => d.format('DD-MM-YYYY')).join(' --- ') : '');
+    };
+
+    const handleMonthChange = (date: DateObject[]) => {
+      setSelectedDate([]);
+      setSelectedMonth(date);
+      setRange(date ? date.map((d) => d.format('MM-YYYY')).join(' --- ') : '');
+    };
+
     return (
       <Container className='my-3 d-flex'>
         <Container className='d-flex align-items-center justify-content-center'>
           <h5>Chọn ngày để xem</h5>
-          <DatePicker maxDate={maxDate} onlyMonthPicker onChange={handleDateChange} className='rmdp-mobile' format='YYYY-MM-DD' render={renderCalendarButton} />
+
+          <Container>
+            <DatePicker render={renderCalendarButtonDateRange} value={selectedDate} onChange={handleDateChange} format='YYYY-MM-DD' calendarPosition='bottom-right' range rangeHover />
+            <DatePicker render={renderCalendarButtonMonthRange} value={selectedMonth} onChange={handleMonthChange} format='YYYY-MM' calendarPosition='bottom-right' onlyMonthPicker range />
+          </Container>
         </Container>
         <Container className='text-center border rounded border-5 p-3'>
-          <h3 className='text-primary fw-bold'>{dateRange}</h3>
+          <h3 className='text-primary fw-bold'>{range}</h3>
         </Container>
       </Container>
     );
@@ -172,11 +213,6 @@ const Statistic = () => {
         <Container>
           <Table ref={tableRef}>
             <thead>
-              <tr className='text-end'>
-                <th colSpan={6}>
-                  Số ngày trong tháng: <span className='text-primary'>{countDateInMonth(date)}</span>
-                </th>
-              </tr>
               <tr>
                 <th>Tên nhân viên</th>
                 <th>Tổng số giờ làm</th>

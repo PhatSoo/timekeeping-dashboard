@@ -12,6 +12,9 @@ const tableColumns = ['#', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', '
 const today = new Date();
 const nextMonday = new Date(today.setDate(today.getDate() + ((1 + 7 - today.getDay()) % 7))).toISOString().split('T')[0];
 
+const shiftColors = ['danger', 'warning', 'info', 'primary', 'secondary', 'success', 'light', 'dark'];
+const dayNames = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+
 // const nextMonday = today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1) + 7;
 // .toISOString().split('T')[0];
 
@@ -20,24 +23,15 @@ const Schedule = () => {
   const [filterStatus, setFilterStatus] = useState('');
   const [filterName, setFilterName] = useState('');
   const [parttimeData, setParttimeData] = useState<IEmployee[]>([]);
-  const [filteredData, setFilteredData] = useState<IEmployee[]>([]);
   const [workData, setWorkData] = useState<ISchedule[]>([]);
   const [days, setDays] = useState<Date[]>([]);
   const [sPd, setsPd] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [showTooltip, setShowToolTip] = useState(false);
-  const [minDate, setMinDate] = useState<Date>();
-  const [maxDate, setMaxDate] = useState<Date>();
+  const [minDate, setMinDate] = useState<Date>(new Date());
+  const [maxDate, setMaxDate] = useState<Date>(new Date());
   const [holidayValue, setHolidayValue] = useState<Value>([]);
-
-  useEffect(() => {
-    const now = new Date();
-    const nextMonday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + ((1 + 7 - now.getDay()) % 7 || 7));
-    const nextSunday = new Date(nextMonday.getFullYear(), nextMonday.getMonth(), nextMonday.getDate() + 7);
-
-    setMinDate(nextMonday);
-    setMaxDate(nextSunday);
-  }, []);
+  const [shiftColorMap, setShiftColorMap] = useState<{ [key: string]: string }>({});
 
   const target = useRef(null);
 
@@ -60,9 +54,29 @@ const Schedule = () => {
 
   // Get all part-time employees
   useEffect(() => {
+    const now = new Date();
+    const nextMonday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + ((1 + 7 - now.getDay()) % 7 || 7));
+    const nextSunday = new Date(nextMonday.getFullYear(), nextMonday.getMonth(), nextMonday.getDate() + 7);
+
+    setMinDate(nextMonday);
+    setMaxDate(nextSunday);
+
     fetch('/api/employee?isPartTime=1')
       .then((response) => response.json())
       .then((result) => setParttimeData(result.data));
+
+    fetch('/api/shift')
+      .then((r) => r.json())
+      .then((res) => {
+        const data = res.data as IShift[];
+        const newShiftColorMap: { [key: string]: string } = {};
+        data.forEach((shift, i) => {
+          if (!newShiftColorMap[shift._id]) {
+            newShiftColorMap[shift._id] = shiftColors[i % shiftColors.length];
+          }
+        });
+        setShiftColorMap(newShiftColorMap);
+      });
   }, []);
 
   // Get all schedules
@@ -72,12 +86,6 @@ const Schedule = () => {
       .then((result) => setWorkData(result.data))
       .finally(() => setIsLoading(false));
   }, [filterDate]);
-
-  const clearFilter = () => {
-    setFilterDate('');
-    setFilterStatus('');
-    setFilterName('');
-  };
 
   const handleFilterDateChange = (e: { target: { value: SetStateAction<string> } }) => {
     setFilterDate(e.target.value);
@@ -91,23 +99,22 @@ const Schedule = () => {
     setFilterName(e.target.value);
   };
 
-  const shiftColors = ['danger', 'warning', 'info', 'primary', 'secondary', 'success', 'light', 'dark'];
-
-  const dayNames = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
-
-  console.log('====================================');
-  console.log(holidayValue?.toString().split(','));
-  console.log('====================================');
-
   const handleSchedule = (e: { preventDefault: () => void }) => {
     e.preventDefault();
     // Kiểm tra xem đến giờ được phép xếp ca chưa ?
     const now = new Date();
 
-    const checkTime = now.getDay() === 0 && now.getHours() >= 16 && now.getMinutes() >= 30;
+    // const checkTime = now.getDay() === 0 && now.getHours() >= 16 && now.getMinutes() >= 30;
+    const checkTime = true;
+
     let holiday: string[] = [];
     if (holidayValue && holidayValue.toString()) {
       holiday = holidayValue.toString().split(',');
+    }
+
+    if (filterDate < nextMonday) {
+      setShowToolTip(true);
+      return;
     }
 
     if (checkTime) {
@@ -204,14 +211,16 @@ const Schedule = () => {
               </Container>
               {showTooltip && (
                 <Container className='mb-3'>
-                  <span className='text-danger fst-italic'>Thời gian xếp lịch là từ 16h30 ngày Chủ Nhật</span>
+                  <span className='text-danger fst-italic'>
+                    Thời gian xếp lịch là từ 16h30 ngày Chủ Nhật, và ngày cần xếp lịch phải {'>'}= {nextMonday}
+                  </span>
                 </Container>
               )}
               <Button ref={target} variant='info' type='submit'>
                 Sắp xếp
               </Button>
               <Overlay target={target.current} show={showTooltip} placement='bottom'>
-                {(props) => <Tooltip {...props}>Chưa đến giờ xếp lịch</Tooltip>}
+                {(props) => <Tooltip {...props}>Chưa đạt đúng yêu cầu!</Tooltip>}
               </Overlay>
             </Form>
           </Accordion.Body>
@@ -248,7 +257,7 @@ const Schedule = () => {
                       <Stack gap={2}>
                         {workDay
                           ? workDay.workShift.map((shift, i) => (
-                              <Badge key={i} bg={shiftColors[i]} pill>
+                              <Badge key={i} bg={shiftColorMap[shift._id]} pill>
                                 {shift.shiftName}
                               </Badge>
                             ))

@@ -177,7 +177,7 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
         )}
 
         <Row className='align-items-end'>
-          <Col>
+          <Col className='border-end border-3'>
             <Form onSubmit={handleSubmit}>
               <Container className='d-flex flex-column'>
                 <Form.Group className='mb-3'>
@@ -243,7 +243,7 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
           </Col>
 
           {!isAddNew && (
-            <Col className='border-start border-3'>
+            <Col>
               <Form encType='multipart/form-data' onSubmit={handleChangeImage} className='d-flex flex-column justify-content-center align-items-center gap-3'>
                 <Container className='d-flex flex-column gap-2 justify-content-center align-items-center'>
                   <Image src={srcValue} alt='Ảnh' width={350} height={450} />

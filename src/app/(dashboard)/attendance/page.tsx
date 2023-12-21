@@ -1,22 +1,25 @@
 'use client';
 
 import { SetStateAction, useEffect, useState } from 'react';
-import { Col, Container, Form, Row, Tab, Table, Tabs } from 'react-bootstrap';
+import { Button, Col, Container, Form, Row, Spinner, Tab, Table, Tabs } from 'react-bootstrap';
 import { IAttendance, IEmployee, ISettings } from '@/types/types';
 import TableLoading from '@/components/Component.TableLoading';
 import ViewDetailButton from '@/components/Attendance.ViewDetail';
 import AttendanceItem from '@/components/Attendance.Percent';
+import { toast } from 'react-toastify';
 
 const tableColumns = ['Name', 'Date', 'Check In', 'Check Out', 'Status', 'Action'];
 const today = new Date().toISOString().split('T')[0];
 
 const Attendance = () => {
   const [isLoading, setIsLoading] = useState(true);
+  const [loadImage, setLoadImage] = useState(0);
+  const [buttonLoading, setButtonLoading] = useState(false);
   const [fulltimeEmployee, setFulltimeEmployee] = useState<IEmployee[]>([]);
   const [parttimeEmployee, setParttimeEmployee] = useState<IEmployee[]>([]);
   const [filterDate, setFilterDate] = useState(today);
-  const [filterStatus, setFilterStatus] = useState('');
-  const [filterName, setFilterName] = useState('');
+  // const [filterStatus, setFilterStatus] = useState('');
+  // const [filterName, setFilterName] = useState('');
   const [attendanceData, setAttendanceData] = useState<IAttendance[]>([]);
   const [settings, setSettings] = useState<ISettings>({
     workDate: [],
@@ -31,6 +34,7 @@ const Attendance = () => {
   const [countLate, setCountLate] = useState(0);
   const [countEarly, setCountEarly] = useState(0);
   const [countNone, setCountNone] = useState(0);
+  const [countOnLeave, setCountOnLeave] = useState(0);
 
   // Get all full-time employees for first render
   useEffect(() => {
@@ -48,7 +52,7 @@ const Attendance = () => {
       })
       .catch((error) => console.error(error))
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [loadImage]);
 
   useEffect(() => {
     fetch(`api/attendance?date=${filterDate}`)
@@ -56,45 +60,49 @@ const Attendance = () => {
       .then((res) => {
         setAttendanceData(res.data);
         setTotal(res.total);
-        res.data.forEach((item: IAttendance) => {
-          StatusClassification(item);
-        });
+        StatusClassification(res.data);
       })
       .finally(() => setIsLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterDate]);
 
-  const StatusClassification = (attendance: IAttendance) => {
+  const StatusClassification = (attendances: IAttendance[]) => {
     let check = 0,
       late = 0,
       early = 0,
-      none = 0;
+      none = 0,
+      onLeave = 0;
 
-    let checkInTime = new Date(attendance.checkIn.time);
-    let checkOutTime = new Date(attendance.checkOut.time);
+    attendances.forEach((attendance: IAttendance) => {
+      let checkInTime = new Date(attendance.checkIn.time);
+      let checkOutTime = new Date(attendance.checkOut.time);
 
-    let startTime = attendance.workShift ? attendance.workShift.startTime : settings.workHours.startTime;
-    let endTime = attendance.workShift ? attendance.workShift.endTime : settings.workHours.endTime;
+      let startTime = attendance.workShift ? attendance.workShift.startTime : settings.workHours.startTime;
+      let endTime = attendance.workShift ? attendance.workShift.endTime : settings.workHours.endTime;
 
-    const startTimeDate = new Date(checkInTime.toDateString() + ' ' + startTime);
-    const endTimeDate = new Date(checkInTime.toDateString() + ' ' + endTime);
+      const startTimeDate = new Date(checkInTime.toDateString() + ' ' + startTime);
+      const endTimeDate = new Date(checkInTime.toDateString() + ' ' + endTime);
 
-    if (attendance.status === 'NULL') {
-      none++;
-    } else {
-      if (checkInTime > startTimeDate) {
-        late++;
+      if (attendance.status === 'NULL') {
+        none++;
+      } else if (attendance.status === 'ON LEAVE') {
+        onLeave++;
+      } else {
+        if (checkInTime > startTimeDate) {
+          late++;
+        }
+        if (checkOutTime < endTimeDate) {
+          early++;
+        }
+        check++;
       }
-      if (checkOutTime < endTimeDate) {
-        early++;
-      }
-      check++;
-    }
+    });
 
     setCountCheck(check);
     setCountLate(late);
     setCountEarly(early);
     setCountNone(none);
+    setCountOnLeave(onLeave);
   };
 
   const attendanceMap = attendanceData.reduce<{ [key: string]: typeof attendanceData }>((map, attendance) => {
@@ -128,12 +136,28 @@ const Attendance = () => {
     setFilterDate(e.target.value);
   };
 
-  const handleFilterStatusChange = (e: { target: { value: SetStateAction<string> } }) => {
-    setFilterStatus(e.target.value);
-  };
+  // const handleFilterStatusChange = (e: { target: { value: SetStateAction<string> } }) => {
+  //   setFilterStatus(e.target.value);
+  // };
 
-  const handleFilterNameChange = (e: { target: { value: SetStateAction<string> } }) => {
-    setFilterName(e.target.value);
+  // const handleFilterNameChange = (e: { target: { value: SetStateAction<string> } }) => {
+  //   setFilterName(e.target.value);
+  // };
+
+  const handleLoadAttendanceImage = () => {
+    setButtonLoading(true);
+
+    fetch('api/upload')
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success) {
+          toast.success(res.message);
+          setLoadImage((prev) => prev + 1);
+        } else {
+          toast.error(res.message);
+        }
+      })
+      .finally(() => setButtonLoading(false));
   };
 
   const renderFilter = () => {
@@ -142,7 +166,7 @@ const Attendance = () => {
         <Col md={3}>
           <Form.Control type='date' placeholder='Filter by Date' value={filterDate} onChange={handleFilterDateChange} />
         </Col>
-        <Col md={3}>
+        {/* <Col md={3}>
           <Form.Control as='select' value={filterStatus} onChange={handleFilterStatusChange}>
             <option value=''>Filter by Status</option>
             <option value='NULL'>NULL</option>
@@ -153,7 +177,7 @@ const Attendance = () => {
         </Col>
         <Col md={3}>
           <Form.Control type='text' placeholder='Filter by Employee Name' value={filterName} onChange={handleFilterNameChange} />
-        </Col>
+        </Col> */}
       </Row>
     );
   };
@@ -161,7 +185,7 @@ const Attendance = () => {
   const renderFullTime = () => {
     return (
       <Container fluid>
-        <Table striped bordered hover>
+        <Table striped bordered hover className='align-middle'>
           <thead>
             <tr>
               <th>Name</th>
@@ -193,7 +217,9 @@ const Attendance = () => {
                       <td>{attendance.checkIn.time ? new Date(attendance.checkIn.time).toLocaleTimeString() : 'N/A'}</td>
                       <td>{attendance.checkOut.time ? new Date(attendance.checkOut.time).toLocaleTimeString() : 'N/A'}</td>
                       <td>{attendance.status}</td>
-                      <td>{/* Thêm các hành động của bạn ở đây */}</td>
+                      <td className='text-center'>
+                        <ViewDetailButton data={attendance} />
+                      </td>
                     </tr>
                   ));
                 }
@@ -268,6 +294,7 @@ const Attendance = () => {
         <AttendanceItem title='Đã chấm công' count={countCheck} total={total} color='#00C853' />
         <AttendanceItem title='Đến muộn' count={countLate} total={total} color='#FF9800' />
         <AttendanceItem title='Về sớm' count={countEarly} total={total} color='#F44336' />
+        <AttendanceItem title='Nghỉ phép' count={countNone} total={total} color='#87CEFA' />
         <AttendanceItem title='Không đến' count={countNone} total={total} color='#9E9E9E' />
       </Container>
     );
@@ -279,6 +306,19 @@ const Attendance = () => {
         {renderFilter()}
 
         {renderPercent()}
+
+        <Container className='text-end mb-3 mt-5'>
+          <Button onClick={!buttonLoading ? handleLoadAttendanceImage : () => {}} variant='info'>
+            {buttonLoading ? (
+              <>
+                <Spinner as='span' animation='grow' size='sm' role='status' aria-hidden='true' />
+                Loading…
+              </>
+            ) : (
+              'Load ảnh chấm công'
+            )}
+          </Button>
+        </Container>
 
         <Tabs defaultActiveKey='full-time' className='mb-3' justify>
           <Tab eventKey='full-time' title='Full-time'>
