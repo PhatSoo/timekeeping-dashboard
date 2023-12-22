@@ -113,36 +113,9 @@ const Attendance = () => {
     return map;
   }, {});
 
-  // const clearFilter = (k: any) => {
-  //   setIsLoading(true);
-  //   if (k === 'full-time') {
-  //     fetch('api/employee?isPartTime=0')
-  //       .then((response) => response.json())
-  //       .then((result) => setFulltimeEmployee(result.data))
-  //       .finally(() => setIsLoading(false));
-  //   } else {
-  //     fetch('api/employee?isPartTime=1')
-  //       .then((response) => response.json())
-  //       .then((result) => setParttimeEmployee(result.data))
-  //       .finally(() => setIsLoading(false));
-  //   }
-
-  //   setFilterDate(today);
-  //   setFilterStatus('');
-  //   setFilterName('');
-  // };
-
   const handleFilterDateChange = (e: { target: { value: SetStateAction<string> } }) => {
     setFilterDate(e.target.value);
   };
-
-  // const handleFilterStatusChange = (e: { target: { value: SetStateAction<string> } }) => {
-  //   setFilterStatus(e.target.value);
-  // };
-
-  // const handleFilterNameChange = (e: { target: { value: SetStateAction<string> } }) => {
-  //   setFilterName(e.target.value);
-  // };
 
   const handleLoadAttendanceImage = () => {
     setButtonLoading(true);
@@ -162,22 +135,10 @@ const Attendance = () => {
 
   const renderFilter = () => {
     return (
-      <Row className='mb-3 d-flex justify-content-end'>
+      <Row className='mb-3 d-flex justify-content-center'>
         <Col md={3}>
           <Form.Control type='date' placeholder='Filter by Date' value={filterDate} onChange={handleFilterDateChange} />
         </Col>
-        {/* <Col md={3}>
-          <Form.Control as='select' value={filterStatus} onChange={handleFilterStatusChange}>
-            <option value=''>Filter by Status</option>
-            <option value='NULL'>NULL</option>
-            <option value='WORKING'>WORKING</option>
-            <option value='DONE'>DONE</option>
-            <option value='ON LEAVE'>ON LEAVE</option>
-          </Form.Control>
-        </Col>
-        <Col md={3}>
-          <Form.Control type='text' placeholder='Filter by Employee Name' value={filterName} onChange={handleFilterNameChange} />
-        </Col> */}
       </Row>
     );
   };
@@ -294,7 +255,7 @@ const Attendance = () => {
         <AttendanceItem title='Đã chấm công' count={countCheck} total={total} color='#00C853' />
         <AttendanceItem title='Đến muộn' count={countLate} total={total} color='#FF9800' />
         <AttendanceItem title='Về sớm' count={countEarly} total={total} color='#F44336' />
-        <AttendanceItem title='Nghỉ phép' count={countNone} total={total} color='#87CEFA' />
+        <AttendanceItem title='Nghỉ phép' count={countOnLeave} total={total} color='#87CEFA' />
         <AttendanceItem title='Không đến' count={countNone} total={total} color='#9E9E9E' />
       </Container>
     );

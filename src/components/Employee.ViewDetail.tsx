@@ -1,10 +1,11 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button, Col, Container, Form, Modal, Row, Spinner } from 'react-bootstrap';
 import avatarDefault from '@/../public/avatar.jpg';
 import { IEmployee, IRole } from '@/types/types';
 import Image from 'next/image';
 import { toast } from 'react-toastify';
+import Webcam from 'react-webcam';
 
 interface IProp {
   showModal: boolean;
@@ -20,7 +21,10 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
   const [resetLoading, setResetLoading] = useState(false);
   const [checkImage, setCheckImage] = useState<{ pass: boolean; message: string } | null>();
   const [isLoading, setLoading] = useState(false);
+  const [showCam, setShowCam] = useState(false);
   const isAddNew = formData._id === '';
+
+  const webcamRef = useRef<Webcam>(null);
 
   useEffect(() => {
     fetch('api/role')
@@ -157,10 +161,55 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
             setCheckImage({ pass: false, message: 'Ảnh không hợp lệ!' });
           }
         })
+        .catch(() => {
+          toast.error('Có lỗi xảy ra!');
+        })
         .finally(() => setLoading(false));
     } else {
       toast.error('Bạn chưa chọn ảnh!');
     }
+  };
+
+  const handleShowCam = () => {
+    return (
+      <>
+        <Webcam />
+      </>
+    );
+  };
+
+  const renderCamera = () => {
+    const offCam = () => {
+      setShowCam(false);
+    };
+
+    const capture = () => {
+      const imageSrc = webcamRef.current?.getScreenshot();
+      if (imageSrc) {
+        setSrcValue(imageSrc);
+        fetch(imageSrc)
+          .then((res) => res.blob())
+          .then((r) => {
+            const file = new File([r], 'image.jpg', { type: 'image/jpeg' });
+            setIsSelectedFile(file);
+          });
+      }
+      setShowCam(false);
+    };
+
+    return (
+      <>
+        <Webcam ref={webcamRef} screenshotFormat='image/jpeg' />
+        <Container className='d-flex justify-content-center gap-5'>
+          <Button className='w-50' variant='info' onClick={capture}>
+            Chụp
+          </Button>
+          <Button className='w-50' variant='danger' onClick={offCam}>
+            Hủy
+          </Button>
+        </Container>
+      </>
+    );
   };
 
   return (
@@ -176,7 +225,7 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
           </Container>
         )}
 
-        <Row className='align-items-end'>
+        <Row className='align-items-end gap-1'>
           <Col className='border-end border-3'>
             <Form onSubmit={handleSubmit}>
               <Container className='d-flex flex-column'>
@@ -246,12 +295,20 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
             <Col>
               <Form encType='multipart/form-data' onSubmit={handleChangeImage} className='d-flex flex-column justify-content-center align-items-center gap-3'>
                 <Container className='d-flex flex-column gap-2 justify-content-center align-items-center'>
-                  <Image src={srcValue} alt='Ảnh' width={350} height={450} />
-
-                  <Form.Control required type='file' accept='image/jpeg, image/png' name='avatar' onChange={handleFileChange} />
+                  {showCam ? (
+                    renderCamera()
+                  ) : (
+                    <>
+                      <Image src={srcValue} alt='Ảnh' width={350} height={450} />
+                      <Form.Control required type='file' accept='image/jpeg, image/png' name='avatar' onChange={handleFileChange} />
+                      <Button className='w-100' variant='light' onClick={() => setShowCam(true)}>
+                        Chụp ảnh
+                      </Button>
+                    </>
+                  )}
                 </Container>
                 {isSelectedFile && (
-                  <Button onClick={!isLoading ? checkImageQuality : () => {}} variant='light'>
+                  <Button onClick={!isLoading ? checkImageQuality : () => {}} variant='secondary'>
                     {isLoading ? 'Loading…' : 'Kiểm tra chất lượng ảnh'}
                   </Button>
                 )}
@@ -259,7 +316,7 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
                   <>
                     <p className={`${checkImage.pass ? 'text-success' : 'text-danger'}`}>{checkImage.message}</p>
                     {checkImage.pass && (
-                      <Button className='m-auto w-50 mt-3' variant='warning' type='submit'>
+                      <Button className='m-auto w-50 mt-3' variant='success' type='submit'>
                         Thay đổi ảnh
                       </Button>
                     )}

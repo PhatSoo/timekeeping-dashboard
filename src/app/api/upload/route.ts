@@ -15,13 +15,22 @@ export const POST = async (req: Request) => {
   if (searchParams.has('checkImage')) {
     // Kiểm tra chất lượng ảnh
 
-    return fetch(`${process.env.API_SERVER2}/api/upload/check-avatar`, {
-      method: 'POST',
-      headers: { Authorization: getCookiesToken() },
-      body: data,
-    })
-      .then((response) => response.json())
-      .then((result) => Response.json(result));
+    try {
+      const response = await fetch(`${process.env.API_SERVER2}/api/upload/check-avatar`, {
+        method: 'POST',
+        headers: { Authorization: getCookiesToken() },
+        body: data,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      return Response.json(result);
+    } catch (err) {
+      return Response.error();
+    }
   } else {
     // Thêm ảnh
 

@@ -4,24 +4,22 @@ import { IEmployee, ISchedule, IShift } from '@/types/types';
 import React, { SetStateAction, useEffect, useRef, useState } from 'react';
 import { Accordion, Badge, Button, Col, Container, FloatingLabel, Form, ListGroup, ListGroupItem, Overlay, Row, Stack, Table, Tooltip } from 'react-bootstrap';
 import { toast } from 'react-toastify';
-import DatePicker from 'react-multi-date-picker';
+import DatePicker, { DateObject } from 'react-multi-date-picker';
 import type { Value } from 'react-multi-date-picker';
+import en from 'react-date-object/locales/gregorian_en';
 import { FaCalendarCheck } from 'react-icons/fa';
 
 const tableColumns = ['#', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật'];
 const today = new Date();
 const nextMonday = new Date(today.setDate(today.getDate() + ((1 + 7 - today.getDay()) % 7))).toISOString().split('T')[0];
+const nextSunday = new Date(today.setDate(today.getDate() + ((0 + 7 - today.getDay()) % 7))).toISOString().split('T')[0];
 
 const shiftColors = ['danger', 'warning', 'info', 'primary', 'secondary', 'success', 'light', 'dark'];
 const dayNames = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
 
-// const nextMonday = today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1) + 7;
-// .toISOString().split('T')[0];
-
 const Schedule = () => {
+  const [weekRange, setWeekRange] = useState([new DateObject(nextMonday), new DateObject(nextSunday)]);
   const [filterDate, setFilterDate] = useState(nextMonday);
-  const [filterStatus, setFilterStatus] = useState('');
-  const [filterName, setFilterName] = useState('');
   const [parttimeData, setParttimeData] = useState<IEmployee[]>([]);
   const [workData, setWorkData] = useState<ISchedule[]>([]);
   const [days, setDays] = useState<Date[]>([]);
@@ -37,7 +35,13 @@ const Schedule = () => {
 
   // Set date for next week
   useEffect(() => {
-    const date = new Date(filterDate);
+    let date: Date;
+    if (weekRange.length === 0) {
+      date = new Date(nextMonday);
+    } else {
+      date = new Date(weekRange[0].format('YYYY-MM-DD'));
+    }
+    // const date = new Date(filterDate);
     const monday = date.getDate() - date.getDay() + (date.getDay() === 0 ? -6 : 1);
     date.setDate(monday);
 
@@ -50,7 +54,7 @@ const Schedule = () => {
       });
 
     setDays(newDays);
-  }, [filterDate]);
+  }, [weekRange]);
 
   // Get all part-time employees
   useEffect(() => {
@@ -87,16 +91,16 @@ const Schedule = () => {
       .finally(() => setIsLoading(false));
   }, [filterDate]);
 
-  const handleFilterDateChange = (e: { target: { value: SetStateAction<string> } }) => {
-    setFilterDate(e.target.value);
-  };
+  const handleFilterDateChange = (e: DateObject[]) => {
+    const first = new Date(e[0].format('YYYY-MM-DD'));
+    first.setDate(first.getDate() + 1);
+    const end = new Date(e[1].format('YYYY-MM-DD'));
+    end.setDate(end.getDate() + 1);
 
-  const handleFilterStatusChange = (e: { target: { value: SetStateAction<string> } }) => {
-    setFilterStatus(e.target.value);
-  };
-
-  const handleFilterNameChange = (e: { target: { value: SetStateAction<string> } }) => {
-    setFilterName(e.target.value);
+    e[0].setDate(first);
+    e[1].setDate(end);
+    setWeekRange(e);
+    setFilterDate(e[0].format('YYYY-MM-DD'));
   };
 
   const handleSchedule = (e: { preventDefault: () => void }) => {
@@ -104,8 +108,8 @@ const Schedule = () => {
     // Kiểm tra xem đến giờ được phép xếp ca chưa ?
     const now = new Date();
 
-    // const checkTime = now.getDay() === 0 && now.getHours() >= 16 && now.getMinutes() >= 30;
-    const checkTime = true;
+    const checkTime = now.getDay() === 0 && now.getHours() >= 16 && now.getMinutes() >= 30;
+    // const checkTime = true;
 
     let holiday: string[] = [];
     if (holidayValue && holidayValue.toString()) {
@@ -137,20 +141,20 @@ const Schedule = () => {
   };
 
   const renderFilter = () => {
+    const renderButton = (value: any, openCalendar: () => void) => {
+      return (
+        <>
+          <Container className='border rounded p-3' onClick={openCalendar}>
+            <h5>{value.toString()}</h5>
+          </Container>
+        </>
+      );
+    };
+
     return (
-      <Row className='mb-3 d-flex justify-content-end'>
-        <Col md={3}>
-          <Form.Control type='date' placeholder='Filter by Date' value={filterDate} onChange={handleFilterDateChange} />
-        </Col>
-        <Col md={3}>
-          <Form.Control as='select' value={filterStatus} onChange={handleFilterStatusChange}>
-            <option value=''>Filter by Status</option>
-            <option value='Present'>Present</option>
-            <option value='Absent'>Absent</option>
-          </Form.Control>
-        </Col>
-        <Col md={3}>
-          <Form.Control type='text' placeholder='Filter by Employee Name' value={filterName} onChange={handleFilterNameChange} />
+      <Row className='mb-3 d-flex justify-content-center'>
+        <Col className='text-center'>
+          <DatePicker weekPicker format='MM-DD-YYYY' value={weekRange} onChange={handleFilterDateChange} locale={en} weekStartDayIndex={1} render={renderButton} />
         </Col>
       </Row>
     );
