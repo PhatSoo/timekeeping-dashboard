@@ -94,4 +94,5 @@ export interface ISettings {
     startTime: string;
     endTime: string;
   };
+  schedule: boolean;
 }

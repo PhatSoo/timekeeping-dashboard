@@ -6,14 +6,14 @@ import { useContext } from 'react';
 import { FaHome, FaUserCheck, FaChartBar, FaBell, FaHourglassHalf, FaCalendarAlt, FaUsers, FaClipboard, FaUserTag, FaRegSun } from 'react-icons/fa';
 
 const data = [
-  { name: 'Dashboard', icon: <FaHome />, link: '/', notify: false },
-  { name: 'Role', icon: <FaUserTag />, link: '/role', notify: false },
-  { name: 'Shift', icon: <FaHourglassHalf />, link: '/shift', notify: false },
-  { name: 'Employee', icon: <FaUsers />, link: '/employee', notify: false },
-  { name: 'Attendance', icon: <FaUserCheck />, link: '/attendance', notify: false },
-  { name: 'Part-time Schedule', icon: <FaCalendarAlt />, link: '/schedule', notify: false },
-  { name: 'Form Requests', icon: <FaClipboard />, link: '/form-request', notify: true },
-  { name: 'Statistic', icon: <FaChartBar />, link: '/statistic', notify: false },
+  { name: 'Dashboard', icon: <FaHome />, link: '/' },
+  { name: 'Role', icon: <FaUserTag />, link: '/role' },
+  { name: 'Shift', icon: <FaHourglassHalf />, link: '/shift' },
+  { name: 'Employee', icon: <FaUsers />, link: '/employee' },
+  { name: 'Attendance', icon: <FaUserCheck />, link: '/attendance' },
+  { name: 'Part-time Schedule', icon: <FaCalendarAlt />, link: '/schedule' },
+  { name: 'Form Requests', icon: <FaClipboard />, link: '/form-request' },
+  { name: 'Statistic', icon: <FaChartBar />, link: '/statistic' },
   // { name: 'Settings', icon: <FaRegSun />, link: '/settings', notify: false },
 ];
 
@@ -22,9 +22,9 @@ const inActive: string = 'link-secondary';
 
 const MenuItem = () => {
   const pathname = usePathname();
-  const formContext = useContext(FormRequestContext);
+  // const formContext = useContext(FormRequestContext);
 
-  const renderItem = (item: { name: string; icon: JSX.Element; link: string; notify: boolean }, idx: number) => {
+  const renderItem = (item: { name: string; icon: JSX.Element; link: string }, idx: number) => {
     return (
       <Link
         style={{ width: '99%' }}
@@ -34,11 +34,11 @@ const MenuItem = () => {
       >
         {item.icon}
         {item.name}
-        {item.notify && formContext && formContext?.pending > 0 && (
+        {/* {item.notify && formContext && formContext?.pending > 0 && (
           <div className='position-absolute top-0 start-100 translate-middle rounded-circle p-1 d-flex justify-content-center align-items-center' style={{ backgroundColor: '#e41e3f' }}>
             <FaBell color={'#fff'} />
           </div>
-        )}
+        )} */}
       </Link>
     );
   };

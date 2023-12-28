@@ -5,7 +5,7 @@ export const GET = async (req: Request) => {
   const { searchParams } = new URL(req.url);
 
   if (searchParams.has('pending')) {
-    return await fetchWithAuth(`${process.env.API_SERVER}/api/form-request/pending`)
+    return await fetchWithAuth(`${process.env.API_SERVER}/api/form-request/pending`, { cache: 'no-store' })
       .then((response) => response.json())
       .then((result) => Response.json(result));
   } else {

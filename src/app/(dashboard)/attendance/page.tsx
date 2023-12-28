@@ -52,7 +52,7 @@ const Attendance = () => {
       })
       .catch((error) => console.error(error))
       .finally(() => setIsLoading(false));
-  }, [loadImage]);
+  }, []);
 
   useEffect(() => {
     fetch(`api/attendance?date=${filterDate}`)
@@ -64,7 +64,7 @@ const Attendance = () => {
       })
       .finally(() => setIsLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterDate]);
+  }, [filterDate, loadImage]);
 
   const StatusClassification = (attendances: IAttendance[]) => {
     let check = 0,

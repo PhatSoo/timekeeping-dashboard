@@ -142,11 +142,12 @@ const Statistic = () => {
   const handleExcelClick = (e: { preventDefault: () => void }) => {
     e.preventDefault();
 
-    if (new Date(today).getMonth() === new Date().getMonth()) {
-      setNotify(true);
-    } else {
-      onDownload();
-    }
+    // if (new Date(today).getMonth() === new Date().getMonth()) {
+    //   setNotify(true);
+    // } else {
+    //   onDownload();
+    // }
+    onDownload();
   };
 
   const renderFilterDate = () => {
@@ -214,6 +215,7 @@ const Statistic = () => {
           <Table ref={tableRef}>
             <thead>
               <tr>
+                <th className='d-none'>Mã nhân viên</th>
                 <th>Tên nhân viên</th>
                 <th>Tổng số giờ làm</th>
                 <th>Số ngày không đi làm</th>
@@ -228,6 +230,7 @@ const Statistic = () => {
                   const calculate = calculateStats(item.attendances);
                   return (
                     <tr key={idx}>
+                      <td className='d-none'>{item.employee._id}</td>
                       <td>{item.employee.name}</td>
                       <td>{calculate.totalWorkingHours}</td>
                       <td>{calculate.daysNotWorked}</td>

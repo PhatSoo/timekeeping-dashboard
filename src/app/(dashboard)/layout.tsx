@@ -1,5 +1,10 @@
 import Layout from '@/components/App.Layout';
+import { FormRequestProvider } from '@/context/FormRequest';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return <Layout>{children}</Layout>;
+  return (
+    // <FormRequestProvider>
+    <Layout>{children}</Layout>
+    // </FormRequestProvider>
+  );
 }

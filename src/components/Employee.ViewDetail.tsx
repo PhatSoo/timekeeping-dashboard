@@ -170,14 +170,6 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
     }
   };
 
-  const handleShowCam = () => {
-    return (
-      <>
-        <Webcam />
-      </>
-    );
-  };
-
   const renderCamera = () => {
     const offCam = () => {
       setShowCam(false);
@@ -300,7 +292,7 @@ const EmployeeViewDetail = ({ showModal, handleCloseModal, formData, handleChang
                   ) : (
                     <>
                       <Image src={srcValue} alt='Ảnh' width={350} height={450} />
-                      <Form.Control required type='file' accept='image/jpeg, image/png' name='avatar' onChange={handleFileChange} />
+                      <Form.Control type='file' accept='image/jpeg, image/png' name='avatar' onChange={handleFileChange} />
                       <Button className='w-100' variant='light' onClick={() => setShowCam(true)}>
                         Chụp ảnh
                       </Button>

@@ -31,6 +31,8 @@ const Schedule = () => {
   const [holidayValue, setHolidayValue] = useState<Value>([]);
   const [shiftColorMap, setShiftColorMap] = useState<{ [key: string]: string }>({});
 
+  let [settingSchedule, setSettingSchedule] = useState(false);
+
   const target = useRef(null);
 
   // Set date for next week
@@ -89,6 +91,12 @@ const Schedule = () => {
       .then((response) => response.json())
       .then((result) => setWorkData(result.data))
       .finally(() => setIsLoading(false));
+
+    fetch('api/settings')
+      .then((r) => r.json())
+      .then((res) => {
+        setSettingSchedule(res.data.schedule);
+      });
   }, [filterDate]);
 
   const handleFilterDateChange = (e: DateObject[]) => {
@@ -108,8 +116,8 @@ const Schedule = () => {
     // Kiểm tra xem đến giờ được phép xếp ca chưa ?
     const now = new Date();
 
-    const checkTime = now.getDay() === 0 && now.getHours() >= 16 && now.getMinutes() >= 30;
-    // const checkTime = true;
+    // const checkTime = now.getDay() === 0 && now.getHours() >= 16 && now.getMinutes() >= 30;
+    const checkTime = true;
 
     let holiday: string[] = [];
     if (holidayValue && holidayValue.toString()) {
@@ -121,7 +129,7 @@ const Schedule = () => {
       return;
     }
 
-    if (checkTime) {
+    if (checkTime && !settingSchedule) {
       fetch('api/schedule', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -135,6 +143,8 @@ const Schedule = () => {
             toast.error(result.message);
           }
         });
+    } else if (settingSchedule) {
+      toast.error('Bạn đã xếp ca làm rồi!');
     } else {
       setShowToolTip(true);
     }
