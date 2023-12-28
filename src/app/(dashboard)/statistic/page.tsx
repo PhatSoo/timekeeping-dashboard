@@ -1,6 +1,6 @@
 'use client';
 
-import { IAttendance, IStatistic } from '@/types/types';
+import { IAttendance, ISettings, IStatistic } from '@/types/types';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Button, Container, Table } from 'react-bootstrap';
 import { FaCalendarAlt, FaCalendarCheck } from 'react-icons/fa';
@@ -24,6 +24,7 @@ const Statistic = () => {
   const [notify, setNotify] = useState(false);
   const [selectedDate, setSelectedDate] = useState([new DateObject(firstDayOfMonth), new DateObject(lastDayOfMonth)]);
   const [selectedMonth, setSelectedMonth] = useState([new DateObject()]);
+  const [setting, setSetting] = useState<ISettings>();
 
   const tableRef = useRef(null);
 
@@ -68,6 +69,12 @@ const Statistic = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range]);
 
+  useEffect(() => {
+    fetch('api/settings')
+      .then((r) => r.json())
+      .then((res) => setSetting(res.data));
+  }, []);
+
   const calculateStats = (attendance: IAttendance[]) => {
     let totalHours = 0;
     let daysNotWorked = 0;
@@ -93,29 +100,36 @@ const Statistic = () => {
         daysOffWithPermission += 1;
       }
 
+      let workShiftStartTime = new Date();
+      let workShiftEndTime = new Date();
+
+      // Chuyển đổi chuỗi ISO thành đối tượng Date
+      const checkInTime = new Date(record.checkIn.time);
+      const checkOutTime = new Date(record.checkOut.time);
+
       // Count days come late
       if (record.workShift) {
-        // Chuyển đổi chuỗi ISO thành đối tượng Date
-        const checkInTime = new Date(record.checkIn.time);
-        const checkOutTime = new Date(record.checkOut.time);
-
         // Tạo một đối tượng Date mới từ chuỗi thời gian workShift.startTime
-        const workShiftStartTime = new Date();
         workShiftStartTime.setHours(Number(record.workShift.startTime.split(':')[0]));
         workShiftStartTime.setMinutes(Number(record.workShift.startTime.split(':')[1]));
 
-        const workShiftEndTime = new Date();
         workShiftEndTime.setHours(Number(record.workShift.endTime.split(':')[0]));
         workShiftEndTime.setMinutes(Number(record.workShift.endTime.split(':')[1]));
+      } else {
+        workShiftStartTime.setHours(Number(setting?.workHours.startTime.split(':')[0]));
+        workShiftStartTime.setMinutes(Number(setting?.workHours.startTime.split(':')[1]));
 
-        // So sánh hai thời gian
-        if (checkInTime.getHours() > workShiftStartTime.getHours() || (checkInTime.getHours() === workShiftStartTime.getHours() && checkInTime.getMinutes() > workShiftStartTime.getMinutes())) {
-          lateArrivals += 1;
-        }
+        workShiftEndTime.setHours(Number(setting?.workHours.endTime.split(':')[0]));
+        workShiftEndTime.setMinutes(Number(setting?.workHours.endTime.split(':')[1]));
+      }
 
-        if (checkOutTime.getHours() < workShiftEndTime.getHours() || (checkOutTime.getHours() === workShiftEndTime.getHours() && checkOutTime.getMinutes() < workShiftEndTime.getMinutes())) {
-          earlyDepartures += 1;
-        }
+      // So sánh hai thời gian
+      if (checkInTime.getHours() > workShiftStartTime.getHours() || (checkInTime.getHours() === workShiftStartTime.getHours() && checkInTime.getMinutes() > workShiftStartTime.getMinutes())) {
+        lateArrivals += 1;
+      }
+
+      if (checkOutTime.getHours() < workShiftEndTime.getHours() || (checkOutTime.getHours() === workShiftEndTime.getHours() && checkOutTime.getMinutes() < workShiftEndTime.getMinutes())) {
+        earlyDepartures += 1;
       }
     });
 
